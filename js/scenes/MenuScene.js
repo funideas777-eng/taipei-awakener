@@ -68,7 +68,7 @@ export class MenuScene extends Phaser.Scene {
         const fs = Math.max(10, Math.floor(13 * s));
 
         this.add.text(10, y, p.name, {
-            fontSize: `${Math.max(14, 18 * s)}px`, fontFamily: 'monospace', color: '#00d4ff', fontStyle: 'bold'
+            fontSize: `${Math.max(20, 24 * s)}px`, fontFamily: 'monospace', color: '#00d4ff', fontStyle: 'bold'
         });
 
         const lines = [
@@ -96,7 +96,7 @@ export class MenuScene extends Phaser.Scene {
 
         if (items.length === 0) {
             this.add.text(w / 2, 200, '背包空空如也', {
-                fontSize: `${14 * s}px`, fontFamily: 'monospace', color: '#666'
+                fontSize: `${Math.max(16, 20 * s)}px`, fontFamily: 'monospace', color: '#666'
             }).setOrigin(0.5);
             return;
         }
@@ -108,7 +108,7 @@ export class MenuScene extends Phaser.Scene {
             const typeLabels = { weapon: '武', armor: '防', accessory: '飾', consumable: '消', material: '材' };
 
             this.add.text(8, y, `[${typeLabels[item.type] || '?'}]`, {
-                fontSize: `${Math.max(8, 10 * s)}px`, fontFamily: 'monospace', color: typeColors[item.type] || '#fff'
+                fontSize: `${Math.max(13, 15 * s)}px`, fontFamily: 'monospace', color: typeColors[item.type] || '#fff'
             });
             this.add.text(30, y, `${item.name}${(item.quantity || 1) > 1 ? ` x${item.quantity}` : ''}`, {
                 fontSize: `${fs}px`, fontFamily: 'monospace', color: '#fff'
@@ -117,7 +117,7 @@ export class MenuScene extends Phaser.Scene {
             if (['weapon', 'armor', 'accessory'].includes(item.type)) {
                 const isEq = this.player.equipment[item.type] === item.id;
                 const eqBtn = this.add.text(w - 10, y + 2, isEq ? '已裝備' : '裝備', {
-                    fontSize: `${Math.max(9, 11 * s)}px`, fontFamily: 'monospace',
+                    fontSize: `${Math.max(14, 16 * s)}px`, fontFamily: 'monospace',
                     color: isEq ? '#555' : '#f1c40f',
                 }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
                 eqBtn.on('pointerdown', () => {
@@ -138,12 +138,12 @@ export class MenuScene extends Phaser.Scene {
         slots.forEach((slot, i) => {
             const y = this.contentY + i * 70 * s;
             this.add.text(10, y, `【${slotLabels[slot]}】`, {
-                fontSize: `${Math.max(12, 15 * s)}px`, fontFamily: 'monospace', color: '#3498db'
+                fontSize: `${Math.max(18, 20 * s)}px`, fontFamily: 'monospace', color: '#3498db'
             });
             const equipped = this.player.getEquipped(slot);
             if (equipped) {
                 this.add.text(20, y + 22 * s, equipped.name, {
-                    fontSize: `${Math.max(11, 13 * s)}px`, fontFamily: 'monospace', color: '#fff'
+                    fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#fff'
                 });
                 let stats = '';
                 if (equipped.atk) stats += `ATK+${equipped.atk} `;
@@ -152,11 +152,11 @@ export class MenuScene extends Phaser.Scene {
                 if (equipped.mp) stats += `MP+${equipped.mp} `;
                 if (equipped.spd) stats += `SPD+${equipped.spd} `;
                 if (stats) this.add.text(20, y + 40 * s, stats, {
-                    fontSize: `${Math.max(9, 11 * s)}px`, fontFamily: 'monospace', color: '#2ecc71'
+                    fontSize: `${Math.max(14, 16 * s)}px`, fontFamily: 'monospace', color: '#2ecc71'
                 });
             } else {
                 this.add.text(20, y + 22 * s, '（未裝備）', {
-                    fontSize: `${Math.max(11, 13 * s)}px`, fontFamily: 'monospace', color: '#555'
+                    fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#555'
                 });
             }
         });
@@ -172,10 +172,10 @@ export class MenuScene extends Phaser.Scene {
             if (!sk) return;
             const y = this.contentY + i * rowH;
             this.add.text(10, y, sk.name, {
-                fontSize: `${Math.max(11, 13 * s)}px`, fontFamily: 'monospace', color: '#9b59b6', fontStyle: 'bold'
+                fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#9b59b6', fontStyle: 'bold'
             });
             this.add.text(10, y + 16 * s, `MP:${sk.mpCost} CD:${sk.cooldown || 0} — ${sk.desc}`, {
-                fontSize: `${Math.max(8, 10 * s)}px`, fontFamily: 'monospace', color: '#7f8c8d',
+                fontSize: `${Math.max(13, 15 * s)}px`, fontFamily: 'monospace', color: '#7f8c8d',
                 wordWrap: { width: this.contentW }
             });
         });
@@ -188,13 +188,13 @@ export class MenuScene extends Phaser.Scene {
 
         // Active
         this.add.text(10, cy, '進行中', {
-            fontSize: `${Math.max(12, 14 * s)}px`, fontFamily: 'monospace', color: '#f1c40f', fontStyle: 'bold'
+            fontSize: `${Math.max(17, 19 * s)}px`, fontFamily: 'monospace', color: '#f1c40f', fontStyle: 'bold'
         });
         cy += 22 * s;
 
         if (this.player.activeQuests.length === 0) {
             this.add.text(14, cy, '沒有進行中的任務', {
-                fontSize: `${Math.max(9, 11 * s)}px`, fontFamily: 'monospace', color: '#555'
+                fontSize: `${Math.max(14, 16 * s)}px`, fontFamily: 'monospace', color: '#555'
             });
             cy += 20 * s;
         }
@@ -202,14 +202,14 @@ export class MenuScene extends Phaser.Scene {
             const quest = QUESTS[qid];
             if (!quest) return;
             this.add.text(14, cy, quest.name, {
-                fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#fff'
+                fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color: '#fff'
             });
             cy += 16 * s;
             quest.objectives.forEach((obj, i) => {
                 const progress = this.player.questProgress[qid]?.[i] || 0;
                 const done = progress >= obj.count;
                 this.add.text(20, cy, `${obj.type === 'kill' ? '討伐' : '收集'} ${obj.target}: ${progress}/${obj.count}`, {
-                    fontSize: `${Math.max(8, 10 * s)}px`, fontFamily: 'monospace', color: done ? '#2ecc71' : '#7f8c8d'
+                    fontSize: `${Math.max(13, 15 * s)}px`, fontFamily: 'monospace', color: done ? '#2ecc71' : '#7f8c8d'
                 });
                 cy += 14 * s;
             });
@@ -219,17 +219,17 @@ export class MenuScene extends Phaser.Scene {
         // Available
         cy += 10 * s;
         this.add.text(10, cy, '可接受', {
-            fontSize: `${Math.max(12, 14 * s)}px`, fontFamily: 'monospace', color: '#3498db', fontStyle: 'bold'
+            fontSize: `${Math.max(17, 19 * s)}px`, fontFamily: 'monospace', color: '#3498db', fontStyle: 'bold'
         });
         cy += 22 * s;
 
         QuestSystem.getAvailableQuests(this.player, this.cityKey).forEach(quest => {
             if (cy > this.cameras.main.height - 50) return;
             this.add.text(14, cy, quest.name, {
-                fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#fff'
+                fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color: '#fff'
             });
             const acceptBtn = this.add.text(w - 10, cy, '接受', {
-                fontSize: `${Math.max(9, 11 * s)}px`, fontFamily: 'monospace', color: '#2ecc71',
+                fontSize: `${Math.max(14, 16 * s)}px`, fontFamily: 'monospace', color: '#2ecc71',
                 backgroundColor: '#2c3e50', padding: { x: 6, y: 2 }
             }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
             acceptBtn.on('pointerdown', () => {
@@ -239,7 +239,7 @@ export class MenuScene extends Phaser.Scene {
             });
             cy += 14 * s;
             this.add.text(14, cy, quest.desc, {
-                fontSize: `${Math.max(8, 9 * s)}px`, fontFamily: 'monospace', color: '#7f8c8d',
+                fontSize: `${Math.max(13, 15 * s)}px`, fontFamily: 'monospace', color: '#7f8c8d',
                 wordWrap: { width: this.contentW - 80 }
             });
             cy += 24 * s;

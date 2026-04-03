@@ -30,8 +30,8 @@ export class CityScene extends Phaser.Scene {
 
         this.cameras.main.setBackgroundColor('#1a2a1a');
 
-        // --- CITY MAP (top 82%) ---
-        const mapAreaH = h * 0.82;
+        // --- CITY MAP (top 78%) ---
+        const mapAreaH = h * 0.78;
         const mapW = 25, mapH = 15;
         const tileSize = Math.min(Math.floor((w - 10) / mapW), Math.floor((mapAreaH - 30) / mapH));
         const offsetX = (w - mapW * tileSize) / 2;
@@ -62,7 +62,7 @@ export class CityScene extends Phaser.Scene {
 
         // City name
         this.add.text(w / 2, 8, this.city.name, {
-            fontSize: `${Math.max(12, 16 * s)}px`, fontFamily: 'monospace', color: this.city.color, fontStyle: 'bold'
+            fontSize: `${Math.max(18, 24 * s)}px`, fontFamily: 'monospace', color: this.city.color, fontStyle: 'bold'
         }).setOrigin(0.5);
 
         // Buildings
@@ -73,8 +73,8 @@ export class CityScene extends Phaser.Scene {
             const sprite = this.add.image(bx, by, `building-${b.type}`)
                 .setScale(bldgScale).setInteractive({ useHandCursor: true });
             this.add.text(bx, by + tileSize / 2 + 2, b.name, {
-                fontSize: `${Math.max(7, 9 * s)}px`, fontFamily: 'monospace', color: '#fff',
-                backgroundColor: '#00000088', padding: { x: 1, y: 0 }
+                fontSize: `${Math.max(12, 14 * s)}px`, fontFamily: 'monospace', color: '#fff',
+                backgroundColor: '#000000aa', padding: { x: 3, y: 1 }
             }).setOrigin(0.5);
             sprite.on('pointerdown', () => { this.audio.playSFX('click'); this._onBuildingClick(b); });
         });
@@ -92,8 +92,8 @@ export class CityScene extends Phaser.Scene {
                 duration: 1000, yoyo: true, repeat: -1,
             });
             this.add.text(px, py + tileSize / 2 + 2, `${p.rank}級 LV${p.minLevel}+`, {
-                fontSize: `${Math.max(7, 8 * s)}px`, fontFamily: 'monospace', color: PORTAL_RANKS[p.rank].color,
-                backgroundColor: '#00000088', padding: { x: 1, y: 0 }
+                fontSize: `${Math.max(11, 13 * s)}px`, fontFamily: 'monospace', color: PORTAL_RANKS[p.rank].color,
+                backgroundColor: '#000000aa', padding: { x: 3, y: 1 }
             }).setOrigin(0.5);
             portal.on('pointerdown', () => { this.audio.playSFX('portal'); this._onPortalClick(p); });
         });
@@ -105,14 +105,14 @@ export class CityScene extends Phaser.Scene {
         this.add.rectangle(w / 2, barY, w, 1, 0x3498db);
 
         // Player stats (left)
-        const statFs = Math.max(9, Math.floor(11 * s));
-        this.add.text(8, barY + 4, `${this.player.name} LV.${this.player.level}`, {
-            fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#00d4ff', fontStyle: 'bold'
+        const statFs = Math.max(14, Math.floor(16 * s));
+        this.add.text(8, barY + 6, `${this.player.name} LV.${this.player.level}`, {
+            fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#00d4ff', fontStyle: 'bold'
         });
-        this.add.text(8, barY + 4 + 16 * s, `HP:${this.player.hp}/${this.player.maxHp}  MP:${this.player.mp}/${this.player.maxMp}`, {
+        this.add.text(8, barY + 6 + 22 * s, `HP:${this.player.hp}/${this.player.maxHp}  MP:${this.player.mp}/${this.player.maxMp}`, {
             fontSize: `${statFs}px`, fontFamily: 'monospace', color: '#bdc3c7'
         });
-        this.add.text(8, barY + 4 + 30 * s, `金幣:${this.player.gold}  鑽石:${this.player.diamonds}`, {
+        this.add.text(8, barY + 6 + 40 * s, `金幣:${this.player.gold}  鑽石:${this.player.diamonds}`, {
             fontSize: `${statFs}px`, fontFamily: 'monospace', color: '#f1c40f'
         });
 
@@ -123,15 +123,15 @@ export class CityScene extends Phaser.Scene {
             { label: '任務', act: () => this.scene.start('Menu', { tab: 'quest', city: this.cityKey }) },
             { label: '移動', act: () => this._showCityTravel() },
         ];
-        const btnW = Math.min(60, (w * 0.5) / btns.length - 4);
-        const btnH = Math.max(24, 28 * s);
+        const btnW = Math.min(72, (w * 0.55) / btns.length - 4);
+        const btnH = Math.max(32, 36 * s);
         btns.forEach((bd, i) => {
             const bx = w - (btns.length - i) * (btnW + 4) - 4;
-            const by = barY + barH / 2 - 6;
+            const by = barY + barH / 2 - 4;
             const btn = this.add.rectangle(bx + btnW / 2, by, btnW, btnH, 0x2c3e50)
                 .setInteractive({ useHandCursor: true }).setStrokeStyle(1, 0x3498db);
             const txt = this.add.text(bx + btnW / 2, by, bd.label, {
-                fontSize: `${Math.max(9, 11 * s)}px`, fontFamily: 'monospace', color: '#fff'
+                fontSize: `${Math.max(14, 16 * s)}px`, fontFamily: 'monospace', color: '#fff'
             }).setOrigin(0.5);
             btn.on('pointerover', () => txt.setColor('#00d4ff'));
             btn.on('pointerout', () => txt.setColor('#fff'));
@@ -139,8 +139,8 @@ export class CityScene extends Phaser.Scene {
         });
 
         // Save button
-        const saveBtn = this.add.text(w - 30, barY + barH - 14, '存檔', {
-            fontSize: `${Math.max(8, 9 * s)}px`, fontFamily: 'monospace', color: '#555'
+        const saveBtn = this.add.text(w - 30, barY + barH - 18, '存檔', {
+            fontSize: `${Math.max(12, 14 * s)}px`, fontFamily: 'monospace', color: '#555'
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
         saveBtn.on('pointerdown', () => this._quickSave());
 
@@ -165,7 +165,7 @@ export class CityScene extends Phaser.Scene {
         const w = this.cameras.main.width;
         const h = this.cameras.main.height;
         const msg = this.add.text(w / 2, h / 2, 'HP 和 MP 已完全回復！', {
-            fontSize: '16px', fontFamily: 'monospace', color: '#2ecc71',
+            fontSize: '22px', fontFamily: 'monospace', color: '#2ecc71',
             backgroundColor: '#000000cc', padding: { x: 14, y: 8 }
         }).setOrigin(0.5);
         this.tweens.add({ targets: msg, alpha: 0, y: h / 2 - 30, duration: 2000, onComplete: () => msg.destroy() });
@@ -177,7 +177,7 @@ export class CityScene extends Phaser.Scene {
             this.audio.playSFX('error');
             const w = this.cameras.main.width, h = this.cameras.main.height;
             const msg = this.add.text(w / 2, h / 2, `等級不足！需要 LV.${portal.minLevel}+`, {
-                fontSize: '14px', fontFamily: 'monospace', color: '#e74c3c',
+                fontSize: '20px', fontFamily: 'monospace', color: '#e74c3c',
                 backgroundColor: '#000000cc', padding: { x: 14, y: 8 }
             }).setOrigin(0.5);
             this.tweens.add({ targets: msg, alpha: 0, duration: 2000, onComplete: () => msg.destroy() });
@@ -198,19 +198,19 @@ export class CityScene extends Phaser.Scene {
         const boxW = Math.min(420, w * 0.85);
         const boxH = Math.min(300, h * 0.55);
         this.travelContainer.add(this.add.rectangle(w / 2, h / 2, boxW, boxH, 0x0a0a1e, 0.96).setStrokeStyle(2, 0x00d4ff));
-        this.travelContainer.add(this.add.text(w / 2, h / 2 - boxH / 2 + 14, '高鐵傳送', {
-            fontSize: `${16 * s}px`, fontFamily: 'monospace', color: '#00d4ff'
+        this.travelContainer.add(this.add.text(w / 2, h / 2 - boxH / 2 + 16, '高鐵傳送', {
+            fontSize: `${Math.max(18, 22 * s)}px`, fontFamily: 'monospace', color: '#00d4ff'
         }).setOrigin(0.5));
 
         CITY_ORDER.forEach((ck, i) => {
             const city = CITIES[ck];
             const unlocked = this.player.citiesUnlocked.includes(ck);
             const isCurrent = ck === this.cityKey;
-            const y = h / 2 - boxH / 2 + 42 + i * 32 * s;
+            const y = h / 2 - boxH / 2 + 48 + i * 38 * s;
             const color = isCurrent ? '#7f8c8d' : unlocked ? city.color : '#444';
             const label = `${city.name} (LV.${city.levelRange[0]}-${city.levelRange[1]})${isCurrent ? ' ← 目前' : ''}${!unlocked ? ' 🔒' : ''}`;
             const txt = this.add.text(w / 2, y, label, {
-                fontSize: `${Math.max(10, 13 * s)}px`, fontFamily: 'monospace', color
+                fontSize: `${Math.max(15, 18 * s)}px`, fontFamily: 'monospace', color
             }).setOrigin(0.5);
             if (unlocked && !isCurrent) {
                 txt.setInteractive({ useHandCursor: true });
@@ -232,7 +232,7 @@ export class CityScene extends Phaser.Scene {
         SaveSystem.addLeaderboardEntry(this.player.toJSON());
         const w = this.cameras.main.width, h = this.cameras.main.height;
         const msg = this.add.text(w / 2, h / 2, '存檔成功！', {
-            fontSize: '14px', fontFamily: 'monospace', color: '#2ecc71',
+            fontSize: '20px', fontFamily: 'monospace', color: '#2ecc71',
             backgroundColor: '#000000cc', padding: { x: 12, y: 6 }
         }).setOrigin(0.5);
         this.tweens.add({ targets: msg, alpha: 0, duration: 1500, onComplete: () => msg.destroy() });

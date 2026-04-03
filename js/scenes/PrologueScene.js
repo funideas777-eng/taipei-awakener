@@ -41,14 +41,15 @@ export class PrologueScene extends Phaser.Scene {
 
         // MRT station background
         this.add.rectangle(width / 2, height / 2 - 50, 600, 250, 0x2c3e50);
+        const s = Math.min(width / 800, height / 600);
         this.add.text(width / 2, height / 2 - 140, '內湖捷運站', {
-            fontSize: '24px', fontFamily: 'monospace', color: '#3498db'
+            fontSize: `${Math.max(24, 32 * s)}px`, fontFamily: 'monospace', color: '#3498db'
         }).setOrigin(0.5);
-        this.add.text(width / 2, height / 2 - 110, 'PM 8:23', {
-            fontSize: '14px', fontFamily: 'monospace', color: '#7f8c8d'
+        this.add.text(width / 2, height / 2 - 100, 'PM 8:23', {
+            fontSize: `${Math.max(16, 20 * s)}px`, fontFamily: 'monospace', color: '#7f8c8d'
         }).setOrigin(0.5);
 
-        this.playerSprite = this.add.image(width / 2, height / 2, 'player-sheet', 1).setScale(2);
+        this.playerSprite = this.add.image(width / 2, height / 2, 'player-sheet', 1).setScale(Math.max(2, 3 * s));
     }
 
     // Phase 1: Awakening

@@ -28,21 +28,21 @@ export class ShopScene extends Phaser.Scene {
 
         // Title
         this.add.text(w / 2, 14, this.title, {
-            fontSize: `${Math.max(16, 22 * s)}px`, fontFamily: 'monospace', color: '#f1c40f', fontStyle: 'bold'
+            fontSize: `${Math.max(22, 28 * s)}px`, fontFamily: 'monospace', color: '#f1c40f', fontStyle: 'bold'
         }).setOrigin(0.5);
 
         // Currency
         this.goldText = this.add.text(12, 40, `金幣: ${this.player.gold}`, {
-            fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#f1c40f'
+            fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color: '#f1c40f'
         });
         this.diamondText = this.add.text(w / 2, 40, `鑽石: ${this.player.diamonds}`, {
-            fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#00d4ff'
+            fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color: '#00d4ff'
         });
 
         // Recharge button for diamond shop
         if (this.shopType === 'diamond') {
             const reBtn = this.add.text(w - 12, 40, '充值鑽石', {
-                fontSize: `${Math.max(9, 11 * s)}px`, fontFamily: 'monospace', color: '#00d4ff',
+                fontSize: `${Math.max(14, 16 * s)}px`, fontFamily: 'monospace', color: '#00d4ff',
                 backgroundColor: '#2c3e50', padding: { x: 6, y: 2 }
             }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
             reBtn.on('pointerdown', () => this._showRecharge());
@@ -61,7 +61,7 @@ export class ShopScene extends Phaser.Scene {
             // Name
             const nameColor = item.diamondPrice ? '#00d4ff' : '#fff';
             this.add.text(10, y + 4, item.name, {
-                fontSize: `${Math.max(11, 13 * s)}px`, fontFamily: 'monospace', color: nameColor, fontStyle: 'bold'
+                fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: nameColor, fontStyle: 'bold'
             });
 
             // Desc + stats
@@ -73,19 +73,19 @@ export class ShopScene extends Phaser.Scene {
             if (item.mp) stats += `MP+${item.mp} `;
             if (item.spd) stats += `SPD+${item.spd} `;
             this.add.text(10, y + 4 + 16 * s, stats || desc.substring(0, 20), {
-                fontSize: `${Math.max(8, 10 * s)}px`, fontFamily: 'monospace', color: '#7f8c8d'
+                fontSize: `${Math.max(13, 15 * s)}px`, fontFamily: 'monospace', color: '#7f8c8d'
             });
 
             // Price
             const price = item.diamondPrice || item.price;
             const currency = item.diamondPrice ? '鑽' : '金';
             this.add.text(w - 80, y + 6, `${price}${currency}`, {
-                fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: item.diamondPrice ? '#00d4ff' : '#f1c40f'
+                fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color: item.diamondPrice ? '#00d4ff' : '#f1c40f'
             });
 
             // Buy button
             const buyBtn = this.add.text(w - 12, y + rowH / 2, '購買', {
-                fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#2ecc71',
+                fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color: '#2ecc71',
                 backgroundColor: '#2c3e50', padding: { x: 6, y: 3 }
             }).setOrigin(1, 0.5).setInteractive({ useHandCursor: true });
             buyBtn.on('pointerdown', () => {
@@ -99,18 +99,18 @@ export class ShopScene extends Phaser.Scene {
 
         if (items.length === 0) {
             this.add.text(w / 2, h / 2, '目前沒有商品', {
-                fontSize: `${14 * s}px`, fontFamily: 'monospace', color: '#666'
+                fontSize: `${Math.max(16, 20 * s)}px`, fontFamily: 'monospace', color: '#666'
             }).setOrigin(0.5);
         }
 
         // Message
         this.msgText = this.add.text(w / 2, h - 50, '', {
-            fontSize: `${Math.max(11, 13 * s)}px`, fontFamily: 'monospace', color: '#2ecc71'
+            fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#2ecc71'
         }).setOrigin(0.5);
 
         // Back
         this.add.text(w / 2, h - 20, '← 返回城市', {
-            fontSize: `${Math.max(11, 13 * s)}px`, fontFamily: 'monospace', color: '#e74c3c'
+            fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#e74c3c'
         }).setOrigin(0.5).setInteractive({ useHandCursor: true })
             .on('pointerdown', () => this.scene.start('City', { city: this.cityKey }));
     }
@@ -130,7 +130,7 @@ export class ShopScene extends Phaser.Scene {
         const boxW = Math.min(380, w * 0.85);
         this._rechargePanel.add(this.add.rectangle(w / 2, h / 2, boxW, 240 * s, 0x0a0a1e, 0.97).setStrokeStyle(2, 0x00d4ff));
         this._rechargePanel.add(this.add.text(w / 2, h / 2 - 90 * s, '鑽石充值', {
-            fontSize: `${16 * s}px`, fontFamily: 'monospace', color: '#00d4ff'
+            fontSize: `${Math.max(18, 22 * s)}px`, fontFamily: 'monospace', color: '#00d4ff'
         }).setOrigin(0.5));
 
         ShopSystem.getDiamondPackages().forEach((pkg, i) => {
@@ -138,7 +138,7 @@ export class ShopScene extends Phaser.Scene {
             const btn = this.add.rectangle(w / 2, y, boxW - 40, 28 * s, 0x2c3e50)
                 .setInteractive({ useHandCursor: true }).setStrokeStyle(1, 0x00d4ff);
             const txt = this.add.text(w / 2, y, pkg.label, {
-                fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#fff'
+                fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color: '#fff'
             }).setOrigin(0.5);
             btn.on('pointerdown', () => {
                 // Test mode: instant grant
@@ -154,7 +154,7 @@ export class ShopScene extends Phaser.Scene {
         });
 
         const closeBtn = this.add.text(w / 2, h / 2 + 100 * s, '關閉', {
-            fontSize: `${12 * s}px`, fontFamily: 'monospace', color: '#e74c3c'
+            fontSize: `${Math.max(15, 18 * s)}px`, fontFamily: 'monospace', color: '#e74c3c'
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
         closeBtn.on('pointerdown', () => { this._rechargePanel.destroy(); this._rechargePanel = null; });
         this._rechargePanel.add(closeBtn);

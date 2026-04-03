@@ -118,17 +118,17 @@ export class DungeonScene extends Phaser.Scene {
         // UI
         const s = Math.min(w / 800, h / 600);
         this.add.text(8, 5, `${theme.name} — ${rankInfo.name}`, {
-            fontSize: `${Math.max(9, 11 * s)}px`, fontFamily: 'monospace', color: theme.accentColor
+            fontSize: `${Math.max(14, 18 * s)}px`, fontFamily: 'monospace', color: theme.accentColor
         });
         const exitBtn = this.add.text(w - 8, 5, '離開', {
-            fontSize: `${Math.max(9, 11 * s)}px`, fontFamily: 'monospace', color: '#e74c3c',
-            backgroundColor: '#000000aa', padding: { x: 4, y: 2 }
+            fontSize: `${Math.max(14, 18 * s)}px`, fontFamily: 'monospace', color: '#e74c3c',
+            backgroundColor: '#000000aa', padding: { x: 6, y: 3 }
         }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
         exitBtn.on('pointerdown', () => this.scene.start('City', { city: this.cityKey }));
 
-        this.statusText = this.add.text(8, h - 18, '', {
-            fontSize: `${Math.max(8, 10 * s)}px`, fontFamily: 'monospace', color: '#bdc3c7',
-            backgroundColor: '#000000aa', padding: { x: 3, y: 1 }
+        this.statusText = this.add.text(8, h - 24, '', {
+            fontSize: `${Math.max(14, 16 * s)}px`, fontFamily: 'monospace', color: '#bdc3c7',
+            backgroundColor: '#000000aa', padding: { x: 5, y: 2 }
         });
         this._updateStatus();
     }
@@ -225,7 +225,7 @@ export class DungeonScene extends Phaser.Scene {
         this.player.addGold(gold);
         const w = this.cameras.main.width, h = this.cameras.main.height;
         const msg = this.add.text(w / 2, h / 2, `寶箱！獲得 ${gold} 金幣`, {
-            fontSize: '13px', fontFamily: 'monospace', color: '#f1c40f',
+            fontSize: '20px', fontFamily: 'monospace', color: '#f1c40f',
             backgroundColor: '#000000cc', padding: { x: 10, y: 5 }
         }).setOrigin(0.5);
         this.tweens.add({ targets: msg, alpha: 0, y: h / 2 - 25, duration: 2000, onComplete: () => msg.destroy() });
@@ -235,7 +235,7 @@ export class DungeonScene extends Phaser.Scene {
     _completeDungeon() {
         const w = this.cameras.main.width, h = this.cameras.main.height;
         this.add.text(w / 2, h / 2, '迷宮通關！', {
-            fontSize: '18px', fontFamily: 'monospace', color: '#2ecc71',
+            fontSize: '24px', fontFamily: 'monospace', color: '#2ecc71',
             backgroundColor: '#000000cc', padding: { x: 14, y: 6 }
         }).setOrigin(0.5);
         this.time.delayedCall(1500, () => this.scene.start('City', { city: this.cityKey }));

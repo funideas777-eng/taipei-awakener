@@ -41,14 +41,14 @@ export class DialogScene extends Phaser.Scene {
         const w = this.cameras.main.width;
         const h = this.cameras.main.height;
         const s = Math.min(w / 800, h / 600);
-        const fs = Math.max(16, Math.floor(20 * s));
+        const fs = Math.max(20, Math.floor(26 * s));
 
         // Overlay
         this.add.rectangle(w / 2, h / 2, w, h, 0x000000, 0.3);
 
-        // Dialog box - 94% width, bottom 38% of screen for better readability
+        // Dialog box - 94% width, bottom 32% of screen
         const boxW = w * 0.94;
-        const boxH = Math.max(160, h * 0.38);
+        const boxH = Math.max(140, h * 0.32);
         const boxY = h - boxH / 2 - 6;
         const boxX = w / 2;
 
@@ -61,26 +61,26 @@ export class DialogScene extends Phaser.Scene {
         const padTop = boxY - boxH / 2 + 14;
         const textW = boxW - 40;
 
-        // Speaker name
+        // Speaker name — large and bold
         this.speakerText = this.add.text(padX, padTop, '', {
-            fontSize: `${Math.max(16, Math.floor(20 * s))}px`,
+            fontSize: `${Math.max(18, Math.floor(22 * s))}px`,
             fontFamily: 'monospace',
             color: '#00d4ff',
             fontStyle: 'bold',
         });
 
-        // Dialog text - large readable font, auto word wrap
-        this.dialogText = this.add.text(padX, padTop + 30 * s, '', {
+        // Dialog text — large readable font with generous line spacing
+        this.dialogText = this.add.text(padX, padTop + 34 * s, '', {
             fontSize: `${fs}px`,
             fontFamily: 'monospace',
             color: '#fff',
             wordWrap: { width: textW, useAdvancedWrap: true },
-            lineSpacing: Math.max(6, 10 * s),
+            lineSpacing: Math.max(10, 14 * s),
         });
 
         // Continue prompt
         this.promptText = this.add.text(boxX + boxW / 2 - 12, boxY + boxH / 2 - 14, '▼ 點擊繼續', {
-            fontSize: `${Math.max(12, Math.floor(14 * s))}px`,
+            fontSize: `${Math.max(14, Math.floor(16 * s))}px`,
             fontFamily: 'monospace',
             color: '#7f8c8d'
         }).setOrigin(1, 0.5);

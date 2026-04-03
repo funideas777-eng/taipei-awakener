@@ -61,7 +61,7 @@ export class TitleScene extends Phaser.Scene {
         this.tweens.add({ targets: title, alpha: { from: 0.7, to: 1 }, duration: 1500, yoyo: true, repeat: -1 });
 
         this.add.text(w / 2, h * 0.23, 'TAIPEI AWAKENER', {
-            fontSize: `${Math.max(12, Math.floor(18 * s))}px`, fontFamily: 'monospace', color: '#7f8c8d'
+            fontSize: `${Math.max(16, Math.floor(22 * s))}px`, fontFamily: 'monospace', color: '#7f8c8d'
         }).setOrigin(0.5);
 
         // Buttons
@@ -91,7 +91,7 @@ export class TitleScene extends Phaser.Scene {
         const btn = this.add.rectangle(x, y, bw, bh, 0x2c3e50)
             .setStrokeStyle(2, 0x3498db).setInteractive({ useHandCursor: true });
         const lbl = this.add.text(x, y, text, {
-            fontSize: `${Math.max(13, Math.floor(16 * s))}px`, fontFamily: 'monospace', color: '#fff'
+            fontSize: `${Math.max(18, Math.floor(22 * s))}px`, fontFamily: 'monospace', color: '#fff'
         }).setOrigin(0.5);
         btn.on('pointerover', () => { btn.setFillStyle(0x34495e).setStrokeStyle(2, 0x00d4ff); lbl.setColor('#00d4ff'); });
         btn.on('pointerout', () => { btn.setFillStyle(0x2c3e50).setStrokeStyle(2, 0x3498db); lbl.setColor('#fff'); });
@@ -114,7 +114,7 @@ export class TitleScene extends Phaser.Scene {
         this.saveContainer = this.add.container(0, 0);
         this.saveContainer.add(this.add.rectangle(w / 2, h / 2, Math.min(500, w * 0.85), Math.min(300, h * 0.55), 0x0a0a1e, 0.96).setStrokeStyle(2, 0x00d4ff));
         this.saveContainer.add(this.add.text(w / 2, h / 2 - 100 * s, '選擇存檔', {
-            fontSize: `${18 * s}px`, fontFamily: 'monospace', color: '#00d4ff'
+            fontSize: `${Math.max(20, 24 * s)}px`, fontFamily: 'monospace', color: '#00d4ff'
         }).setOrigin(0.5));
 
         const saves = SaveSystem.getAllSaves();
@@ -126,7 +126,7 @@ export class TitleScene extends Phaser.Scene {
             const slotBg = this.add.rectangle(w / 2, sy, Math.min(360, w * 0.6), 36 * s, 0x2c3e50)
                 .setStrokeStyle(1, 0x3498db);
             const txt = this.add.text(w / 2, sy, label, {
-                fontSize: `${13 * s}px`, fontFamily: 'monospace', color
+                fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color
             }).setOrigin(0.5);
             this.saveContainer.add(slotBg);
             this.saveContainer.add(txt);
@@ -136,7 +136,7 @@ export class TitleScene extends Phaser.Scene {
             }
         }
         const closeBtn = this.add.text(w / 2, h / 2 + 110 * s, '返回', {
-            fontSize: `${14 * s}px`, fontFamily: 'monospace', color: '#e74c3c'
+            fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#e74c3c'
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
         closeBtn.on('pointerdown', () => { this.saveContainer.destroy(); this.saveContainer = null; });
         this.saveContainer.add(closeBtn);
@@ -166,27 +166,27 @@ export class TitleScene extends Phaser.Scene {
         this.leaderboardContainer = this.add.container(0, 0);
         this.leaderboardContainer.add(this.add.rectangle(w / 2, h / 2, Math.min(500, w * 0.85), Math.min(350, h * 0.6), 0x0a0a1e, 0.96).setStrokeStyle(2, 0xf1c40f));
         this.leaderboardContainer.add(this.add.text(w / 2, h / 2 - 130 * s, '排 行 榜', {
-            fontSize: `${18 * s}px`, fontFamily: 'monospace', color: '#f1c40f'
+            fontSize: `${Math.max(20, 24 * s)}px`, fontFamily: 'monospace', color: '#f1c40f'
         }).setOrigin(0.5));
 
         const board = SaveSystem.getLeaderboard();
         board.slice(0, 8).forEach((entry, i) => {
-            const y = h / 2 - 80 * s + i * 24 * s;
+            const y = h / 2 - 80 * s + i * 28 * s;
             const rankColor = i === 0 ? '#f1c40f' : i === 1 ? '#bdc3c7' : i === 2 ? '#cd7f32' : '#fff';
             this.leaderboardContainer.add(this.add.text(w / 2 - 160 * s, y,
                 `#${i + 1}  ${entry.name.padEnd(10)} LV.${String(entry.level).padStart(2)}  ${entry.citiesCleared}/6`,
-                { fontSize: `${12 * s}px`, fontFamily: 'monospace', color: rankColor }
+                { fontSize: `${Math.max(14, 16 * s)}px`, fontFamily: 'monospace', color: rankColor }
             ));
         });
         if (board.length === 0) {
             this.leaderboardContainer.add(this.add.text(w / 2, h / 2, '暫無記錄', {
-                fontSize: `${14 * s}px`, fontFamily: 'monospace', color: '#666'
+                fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#666'
             }).setOrigin(0.5));
         }
-        const closeBtn = this.add.text(w / 2, h / 2 + 140 * s, '返回', {
-            fontSize: `${14 * s}px`, fontFamily: 'monospace', color: '#e74c3c'
+        const closeBtn2 = this.add.text(w / 2, h / 2 + 140 * s, '返回', {
+            fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#e74c3c'
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-        closeBtn.on('pointerdown', () => { this.leaderboardContainer.destroy(); this.leaderboardContainer = null; });
-        this.leaderboardContainer.add(closeBtn);
+        closeBtn2.on('pointerdown', () => { this.leaderboardContainer.destroy(); this.leaderboardContainer = null; });
+        this.leaderboardContainer.add(closeBtn2);
     }
 }

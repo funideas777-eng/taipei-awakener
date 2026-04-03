@@ -37,7 +37,7 @@ export class BattleScene extends Phaser.Scene {
         const h = this.cameras.main.height;
         this.s = Math.min(w / 800, h / 600);
         const s = this.s;
-        const fs = Math.max(10, Math.floor(13 * s));
+        const fs = Math.max(16, Math.floor(18 * s));
 
         this.cameras.main.setBackgroundColor('#0a0a1a');
 
@@ -73,10 +73,10 @@ export class BattleScene extends Phaser.Scene {
         // --- STATS BARS ---
         // Monster info (top-right)
         this.add.text(w * 0.55, 8, this.monsterData.name, {
-            fontSize: `${Math.max(11, 15 * s)}px`, fontFamily: 'monospace', color: '#e74c3c', fontStyle: 'bold'
+            fontSize: `${Math.max(16, 20 * s)}px`, fontFamily: 'monospace', color: '#e74c3c', fontStyle: 'bold'
         });
-        this.add.text(w * 0.55, 8 + 18 * s, `LV.${this.monsterData.level}`, {
-            fontSize: `${Math.max(9, 11 * s)}px`, fontFamily: 'monospace', color: '#7f8c8d'
+        this.add.text(w * 0.55, 8 + 24 * s, `LV.${this.monsterData.level}`, {
+            fontSize: `${Math.max(13, 16 * s)}px`, fontFamily: 'monospace', color: '#7f8c8d'
         });
         const mBarW = Math.min(180, w * 0.3);
         this.add.rectangle(w * 0.55 + mBarW / 2, 12 + 36 * s, mBarW, 10 * s, 0x1a1a1a).setStrokeStyle(1, 0x444444);
@@ -85,21 +85,21 @@ export class BattleScene extends Phaser.Scene {
 
         // Player info (top-left)
         this.add.text(10, 8, `${this.player.name} LV.${this.player.level}`, {
-            fontSize: `${Math.max(10, 13 * s)}px`, fontFamily: 'monospace', color: '#00d4ff', fontStyle: 'bold'
+            fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#00d4ff', fontStyle: 'bold'
         });
         const pBarW = Math.min(150, w * 0.25);
         // HP bar
         this.add.rectangle(10 + pBarW / 2, 10 + 22 * s, pBarW, 8 * s, 0x1a1a1a).setStrokeStyle(1, 0x444444);
         this.playerHpBar = this.add.rectangle(10, 10 + 22 * s, pBarW - 4, 6 * s, 0xe74c3c).setOrigin(0, 0.5);
         this.playerHpText = this.add.text(10 + pBarW + 5, 4 + 22 * s, '', {
-            fontSize: `${Math.max(8, 10 * s)}px`, fontFamily: 'monospace', color: '#fff'
+            fontSize: `${Math.max(13, 15 * s)}px`, fontFamily: 'monospace', color: '#fff'
         });
         this._pBarFullW = pBarW - 4;
         // MP bar
         this.add.rectangle(10 + pBarW / 2, 10 + 36 * s, pBarW, 8 * s, 0x1a1a1a).setStrokeStyle(1, 0x444444);
         this.playerMpBar = this.add.rectangle(10, 10 + 36 * s, pBarW - 4, 6 * s, 0x3498db).setOrigin(0, 0.5);
         this.playerMpText = this.add.text(10 + pBarW + 5, 4 + 36 * s, '', {
-            fontSize: `${Math.max(8, 10 * s)}px`, fontFamily: 'monospace', color: '#fff'
+            fontSize: `${Math.max(13, 15 * s)}px`, fontFamily: 'monospace', color: '#fff'
         });
 
         // --- BATTLE LOG (middle strip ~12%) ---
@@ -138,7 +138,7 @@ export class BattleScene extends Phaser.Scene {
             const btn = this.add.rectangle(x, y, btnW, btnH, 0x2c3e50)
                 .setInteractive({ useHandCursor: true }).setStrokeStyle(1, 0x3498db);
             const txt = this.add.text(x, y, cmd.label, {
-                fontSize: `${Math.max(11, 14 * s)}px`, fontFamily: 'monospace', color: '#fff'
+                fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#fff'
             }).setOrigin(0.5);
             btn.on('pointerover', () => { btn.setFillStyle(0x34495e); txt.setColor('#00d4ff'); });
             btn.on('pointerout', () => { btn.setFillStyle(0x2c3e50); txt.setColor('#fff'); });
@@ -159,7 +159,7 @@ export class BattleScene extends Phaser.Scene {
         const s = this.s;
 
         const backBtn = this.add.text(w - 15, this._cmdY, '← 返回', {
-            fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#e74c3c'
+            fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color: '#e74c3c'
         }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
         backBtn.on('pointerdown', () => { this.subMenuContainer.setVisible(false); this.commandContainer.setVisible(true); });
         this.subMenuContainer.add(backBtn);
@@ -174,7 +174,7 @@ export class BattleScene extends Phaser.Scene {
             const color = canUse ? '#fff' : '#555';
             const txt = this.add.text(12, y,
                 `${sk.name} (MP:${sk.mpCost})${cd > 0 ? ` [CD:${cd}]` : ''}`, {
-                fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color
+                fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color
             });
             if (canUse) {
                 txt.setInteractive({ useHandCursor: true });
@@ -198,7 +198,7 @@ export class BattleScene extends Phaser.Scene {
         const s = this.s;
 
         const backBtn = this.add.text(w - 15, this._cmdY, '← 返回', {
-            fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#e74c3c'
+            fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color: '#e74c3c'
         }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
         backBtn.on('pointerdown', () => { this.subMenuContainer.setVisible(false); this.commandContainer.setVisible(true); });
         this.subMenuContainer.add(backBtn);
@@ -206,7 +206,7 @@ export class BattleScene extends Phaser.Scene {
         const consumables = this.player.inventory.filter(i => i.type === 'consumable');
         if (consumables.length === 0) {
             this.subMenuContainer.add(this.add.text(12, this._cmdY + 4, '沒有可使用的道具', {
-                fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#666'
+                fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color: '#666'
             }));
             return;
         }
@@ -214,7 +214,7 @@ export class BattleScene extends Phaser.Scene {
             const y = this._cmdY + 4 + i * Math.max(22, 26 * s);
             if (y > this.cameras.main.height - 10) return;
             const txt = this.add.text(12, y, `${item.name} x${item.quantity || 1}`, {
-                fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#fff'
+                fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color: '#fff'
             }).setInteractive({ useHandCursor: true });
             txt.on('pointerover', () => txt.setColor('#2ecc71'));
             txt.on('pointerout', () => txt.setColor('#fff'));
@@ -340,7 +340,7 @@ export class BattleScene extends Phaser.Scene {
                     fontSize: `${Math.max(16, 20 * s)}px`, fontFamily: 'monospace', color: '#f1c40f', fontStyle: 'bold'
                 }).setOrigin(0.5);
                 this.add.text(w / 2, h / 2, rewardText, {
-                    fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#fff',
+                    fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color: '#fff',
                     align: 'center', lineSpacing: 3, wordWrap: { width: boxW - 30 }
                 }).setOrigin(0.5);
                 const contBtn = this.add.text(w / 2, h / 2 + boxH / 2 - 25, '繼續', {
@@ -369,7 +369,7 @@ export class BattleScene extends Phaser.Scene {
                     fontSize: `${Math.max(16, 20 * s)}px`, fontFamily: 'monospace', color: '#e74c3c', fontStyle: 'bold'
                 }).setOrigin(0.5);
                 this.add.text(w / 2, h / 2 + 5, 'HP 回復至一半', {
-                    fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#fff'
+                    fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color: '#fff'
                 }).setOrigin(0.5);
                 this.player.hp = Math.floor(this.player.maxHp * 0.5);
                 this.player.mp = Math.floor(this.player.maxMp * 0.5);

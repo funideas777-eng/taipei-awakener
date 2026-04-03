@@ -16,9 +16,16 @@ const config = {
     pixelArt: true,
     backgroundColor: '#0a0a0a',
     scale: {
-        mode: Phaser.Scale.FIT,
+        mode: Phaser.Scale.RESIZE,
         autoCenter: Phaser.Scale.CENTER_BOTH,
+        min: { width: 320, height: 480 },
+        max: { width: 1920, height: 1080 },
     },
+    input: {
+        activePointers: 3,
+        touch: { capture: true },
+    },
+    dom: { createContainer: false },
     scene: [
         BootScene,
         TitleScene,
@@ -33,3 +40,7 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
+
+// Prevent default touch behaviors
+document.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+document.addEventListener('gesturestart', e => e.preventDefault());

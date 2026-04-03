@@ -20,7 +20,11 @@ export class BattleScene extends Phaser.Scene {
     create() {
         const { width, height } = this.cameras.main;
         this.player = this.registry.get('player');
+        this.audio = this.registry.get('audio');
         this.battle = new BattleSystem(this.player, this.monsterData);
+
+        // Battle music
+        this.audio.playBGM(this.monsterData.isBoss ? 'boss' : 'battle');
 
         this.cameras.main.setBackgroundColor('#0a0a1a');
 
@@ -255,8 +259,10 @@ export class BattleScene extends Phaser.Scene {
             this.logText.setText(log.text);
             this._updateBars();
 
-            // Damage animation
+            // Damage animation + SFX + vibration
             if (log.damage && log.actor === 'player') {
+                this.audio.playSFX(log.critical ? 'magic' : 'attack');
+                if (log.critical) this.audio.vibrateCritical();
                 this.tweens.add({
                     targets: this.monsterSprite,
                     x: this.monsterSprite.x + 10,
@@ -264,7 +270,13 @@ export class BattleScene extends Phaser.Scene {
                     yoyo: true,
                     repeat: 3,
                 });
+            } else if (log.heal) {
+                this.audio.playSFX('heal');
+            } else if (log.scan) {
+                this.audio.playSFX('magic');
             } else if (log.damage && log.actor === 'monster') {
+                this.audio.playSFX('hit');
+                this.audio.vibrateHit();
                 this.tweens.add({
                     targets: this.playerSprite,
                     x: this.playerSprite.x - 10,
@@ -305,6 +317,9 @@ export class BattleScene extends Phaser.Scene {
         const { width, height } = this.cameras.main;
 
         if (this.battle.result === 'win') {
+            this.audio.stopBGM();
+            this.audio.playBGM('victory');
+            this.audio.vibrateLevelUp();
             // Monster death animation
             this.tweens.add({
                 targets: this.monsterSprite,
@@ -373,14 +388,23 @@ export class BattleScene extends Phaser.Scene {
                 }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
                 contBtn.on('pointerdown', () => {
-                    if (this.onWinCallback) {
-                        this.onWinCallback();
+                    // Boss unlock logic (stored in registry so it survives scene transition)
+                    if (this.monsterData.isBoss) {
+                        const cityOrder = ['taipei', 'newTaipei', 'taoyuan', 'taichung', 'tainan', 'kaohsiung'];
+                        const bossCity = this.registry.get('player').currentCity;
+                        const idx = cityOrder.indexOf(bossCity);
+                        if (idx >= 0 && idx < cityOrder.length - 1) {
+                            this.registry.get('player').unlockCity(cityOrder[idx + 1]);
+                        }
                     }
                     this.scene.start(this.returnScene, this.returnData);
                 });
             });
 
         } else if (this.battle.result === 'lose') {
+            this.audio.stopBGM();
+            this.audio.playSFX('defeat');
+            this.audio.vibrateDefeat();
             this.tweens.add({
                 targets: this.playerSprite,
                 alpha: 0,

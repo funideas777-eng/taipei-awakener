@@ -24,6 +24,8 @@ export class DungeonScene extends Phaser.Scene {
         const theme = DUNGEON_THEMES[city.theme];
         const rankInfo = PORTAL_RANKS[this.rank];
 
+        this.audio = this.registry.get('audio');
+        this.audio.playBGM('dungeon');
         this.cameras.main.setBackgroundColor(theme.floorColor);
 
         // Generate dungeon
@@ -264,6 +266,7 @@ export class DungeonScene extends Phaser.Scene {
         const roll = Math.random();
         if (roll < 0.5) {
             const gold = 20 + Math.floor(Math.random() * 50) * (PORTAL_RANKS[this.rank].monsterLevelRange[0] / 5 + 1);
+            this.audio.playSFX('chest');
             this.player.addGold(gold);
             rewards.push(`${gold} 金幣`);
         } else if (roll < 0.8) {

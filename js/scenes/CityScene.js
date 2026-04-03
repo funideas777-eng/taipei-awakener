@@ -20,6 +20,8 @@ export class CityScene extends Phaser.Scene {
         this.player.currentCity = this.cityKey;
         this.city = CITIES[this.cityKey];
 
+        this.audio = this.registry.get('audio');
+        this.audio.playBGM('city');
         this.cameras.main.setBackgroundColor('#1a2a1a');
 
         // --- CITY MAP ---
@@ -62,7 +64,7 @@ export class CityScene extends Phaser.Scene {
                 backgroundColor: '#00000088', padding: { x: 2, y: 1 }
             }).setOrigin(0.5);
 
-            sprite.on('pointerdown', () => this._onBuildingClick(b));
+            sprite.on('pointerdown', () => { this.audio.playSFX('click'); this._onBuildingClick(b); });
         });
 
         // --- PORTALS ---
@@ -87,7 +89,7 @@ export class CityScene extends Phaser.Scene {
                 backgroundColor: '#00000088', padding: { x: 2, y: 1 }
             }).setOrigin(0.5);
 
-            portalSprite.on('pointerdown', () => this._onPortalClick(p));
+            portalSprite.on('pointerdown', () => { this.audio.playSFX('portal'); this._onPortalClick(p); });
         });
 
         // --- BOTTOM UI BAR ---

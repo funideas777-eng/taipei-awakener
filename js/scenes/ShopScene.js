@@ -16,6 +16,8 @@ export class ShopScene extends Phaser.Scene {
     create() {
         const { width, height } = this.cameras.main;
         this.player = this.registry.get('player');
+        this.audio = this.registry.get('audio');
+        this.audio.playBGM('shop');
         this.cameras.main.setBackgroundColor('#0a0a1a');
 
         // Title
@@ -192,6 +194,7 @@ export class ShopScene extends Phaser.Scene {
         const result = ShopSystem.buyItem(this.player, itemId);
         this.msgText.setText(result.msg);
         this.msgText.setColor(result.success ? '#2ecc71' : '#e74c3c');
+        this.audio.playSFX(result.success ? 'buy' : 'error');
         this._updateCurrency();
     }
 

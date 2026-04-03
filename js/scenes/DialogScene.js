@@ -11,6 +11,7 @@ export class DialogScene extends Phaser.Scene {
     }
 
     create() {
+        this.audio = this.registry.get('audio');
         const { width, height } = this.cameras.main;
 
         // Semi-transparent overlay
@@ -92,6 +93,7 @@ export class DialogScene extends Phaser.Scene {
             delay: 30,
             callback: () => {
                 this.dialogText.setText(text.substring(0, i + 1));
+                if (this.audio && i % 3 === 0) this.audio.playSFX('dialog');
                 i++;
                 if (i >= text.length) {
                     this._isTyping = false;

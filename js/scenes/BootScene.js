@@ -1,6 +1,7 @@
 // Boot scene - generate all sprites and assets
 import { SpriteGenerator } from '../utils/SpriteGenerator.js';
 import { PlayerSystem } from '../systems/PlayerSystem.js';
+import { audio } from '../systems/AudioSystem.js';
 
 export class BootScene extends Phaser.Scene {
     constructor() {
@@ -13,6 +14,8 @@ export class BootScene extends Phaser.Scene {
 
         // Create global player instance
         this.registry.set('player', new PlayerSystem());
+        // Store audio system globally
+        this.registry.set('audio', audio);
 
         // Create player walk animations
         const dirs = ['down', 'left', 'right', 'up'];
@@ -27,11 +30,6 @@ export class BootScene extends Phaser.Scene {
                 ],
                 frameRate: 8,
                 repeat: -1,
-            });
-            this.anims.create({
-                key: `idle-${dir}`,
-                frames: [{ key: 'player-sheet', frame: row * 3 + 1 }],
-                frameRate: 1,
             });
         });
 

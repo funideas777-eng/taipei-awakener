@@ -45,12 +45,16 @@ export class BattleScene extends Phaser.Scene {
         const fieldH = h * 0.52;
         this.add.rectangle(w / 2, fieldH / 2, w, fieldH, 0x1a1a2e);
 
-        // Player sprite (left 25%)
-        this.playerSprite = this.add.image(w * 0.2, fieldH * 0.65, 'player-sheet', 7)
-            .setScale(Math.max(1.5, 3 * s));
+        // Player sprite (left 25%) — prefer hero portrait
+        const heroKey = this.textures.exists('hero-portrait') ? 'hero-portrait' : 'player-sheet';
+        const heroFrame = heroKey === 'player-sheet' ? 7 : undefined;
+        this.playerSprite = this.add.image(w * 0.2, fieldH * 0.65, heroKey, heroFrame)
+            .setScale(heroKey === 'hero-portrait' ? Math.max(0.15, 0.3 * s) : Math.max(1.5, 3 * s));
 
-        // Monster sprite (right 75%)
-        this.monsterSprite = this.add.image(w * 0.75, fieldH * 0.5, this.monsterData.sprite)
+        // Monster sprite (right 75%) — prefer Grok image
+        const grokSprites = this.registry.get('grokSprites') || {};
+        const monsterKey = grokSprites[this.monsterData.sprite] || this.monsterData.sprite;
+        this.monsterSprite = this.add.image(w * 0.75, fieldH * 0.5, monsterKey)
             .setScale(this.monsterData.isBoss ? Math.max(1.5, 2.5 * s) : Math.max(1, 2 * s));
 
         // --- STATS BARS ---

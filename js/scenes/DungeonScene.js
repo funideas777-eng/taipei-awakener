@@ -29,6 +29,14 @@ export class DungeonScene extends Phaser.Scene {
 
         this.cameras.main.setBackgroundColor(theme.floorColor);
 
+        // Dungeon background image
+        const dungeonBgKey = `dungeon-bg-${city.theme}`;
+        if (this.textures.exists(dungeonBgKey)) {
+            const bg = this.add.image(w / 2, h / 2, dungeonBgKey);
+            bg.setDisplaySize(w, h);
+            bg.setAlpha(0.2);
+        }
+
         // Generate dungeon
         const dungeon = MapGenerator.generateDungeon(25, 19, city.theme);
         this.dungeonMap = dungeon.map;
@@ -71,6 +79,7 @@ export class DungeonScene extends Phaser.Scene {
         // Monster sprites
         this.monsterSprites = [];
         const monsterPool = CITY_MONSTERS[this.cityKey] || ['slime'];
+        const grokSprites = this.registry.get('grokSprites') || {};
         dungeon.monsters.forEach(m => {
             const monsterId = monsterPool[Math.floor(Math.random() * monsterPool.length)];
             const monsterData = MONSTERS[monsterId];
@@ -78,7 +87,8 @@ export class DungeonScene extends Phaser.Scene {
             const px = offsetX + m.x * tileSize + tileSize / 2;
             const py = offsetY + m.y * tileSize + tileSize / 2;
             const mScale = Math.max(0.3, tileSize / 40);
-            const sprite = this.add.image(px, py, monsterData.sprite).setScale(mScale)
+            const spriteKey = grokSprites[monsterData.sprite] || monsterData.sprite;
+            const sprite = this.add.image(px, py, spriteKey).setScale(mScale)
                 .setInteractive({ useHandCursor: true });
             this.tweens.add({ targets: sprite, y: py - 2, duration: 400 + Math.random() * 400, yoyo: true, repeat: -1 });
             sprite.on('pointerdown', () => this._startBattle(monsterData, sprite));

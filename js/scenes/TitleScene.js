@@ -34,6 +34,13 @@ export class TitleScene extends Phaser.Scene {
 
         this.cameras.main.setBackgroundColor('#0a0a1a');
 
+        // Title background image
+        if (this.textures.exists('title-bg')) {
+            const bg = this.add.image(w / 2, h / 2, 'title-bg');
+            bg.setDisplaySize(w, h);
+            bg.setAlpha(0.6);
+        }
+
         // Particles
         for (let i = 0; i < 40; i++) {
             const x = Math.random() * w;

@@ -37,6 +37,14 @@ export class CityScene extends Phaser.Scene {
         const offsetX = (w - mapW * tileSize) / 2;
         const offsetY = 28;
 
+        // City background image
+        const cityBgKey = `city-bg-${this.cityKey}`;
+        if (this.textures.exists(cityBgKey)) {
+            const bg = this.add.image(w / 2, offsetY + mapAreaH / 2 - 14, cityBgKey);
+            bg.setDisplaySize(mapW * tileSize, mapH * tileSize);
+            bg.setAlpha(0.35);
+        }
+
         // Draw tiles
         for (let y = 0; y < mapH; y++) {
             for (let x = 0; x < mapW; x++) {

@@ -1,4 +1,4 @@
-// Menu scene - inventory, status, equipment, quests
+// Menu scene - responsive inventory, status, equipment, quests
 import { SKILLS } from '../data/skills.js';
 import { QUESTS } from '../data/quests.js';
 import { QuestSystem } from '../systems/QuestSystem.js';
@@ -14,31 +14,37 @@ export class MenuScene extends Phaser.Scene {
     }
 
     create() {
-        const { width, height } = this.cameras.main;
         this.player = this.registry.get('player');
+        this.audio = this.registry.get('audio');
+        const w = this.cameras.main.width;
+        const h = this.cameras.main.height;
+        this.s = Math.min(w / 800, h / 600);
+
         this.cameras.main.setBackgroundColor('#0a0a1a');
 
-        // Tab buttons
+        // Tabs
         const tabs = ['status', 'inventory', 'equipment', 'skills', 'quest'];
         const tabLabels = ['狀態', '背包', '裝備', '技能', '任務'];
+        const tabW = Math.min(80, (w - 10) / tabs.length - 2);
 
         tabs.forEach((tab, i) => {
-            const x = 20 + i * 100;
+            const x = 5 + i * (tabW + 2) + tabW / 2;
             const isActive = tab === this.activeTab;
-            const btn = this.add.text(x, 10, tabLabels[i], {
-                fontSize: '14px', fontFamily: 'monospace',
+            const btn = this.add.rectangle(x, 16, tabW, 24 * this.s, isActive ? 0x1a1a2e : 0x0a0a1a)
+                .setStrokeStyle(1, isActive ? 0x00d4ff : 0x333333)
+                .setInteractive({ useHandCursor: true });
+            this.add.text(x, 16, tabLabels[i], {
+                fontSize: `${Math.max(9, 12 * this.s)}px`, fontFamily: 'monospace',
                 color: isActive ? '#00d4ff' : '#7f8c8d',
-                backgroundColor: isActive ? '#1a1a2e' : '#0a0a1a',
-                padding: { x: 10, y: 6 },
-            }).setInteractive({ useHandCursor: true });
+            }).setOrigin(0.5);
             btn.on('pointerdown', () => {
-                this.activeTab = tab;
+                this.audio.playSFX('click');
                 this.scene.restart({ tab, city: this.cityKey });
             });
         });
 
-        // Content area
-        this.contentY = 50;
+        this.contentY = 38;
+        this.contentW = w - 16;
 
         switch (this.activeTab) {
             case 'status': this._showStatus(); break;
@@ -48,87 +54,76 @@ export class MenuScene extends Phaser.Scene {
             case 'quest': this._showQuests(); break;
         }
 
-        // Back button
-        this.add.text(width / 2, height - 20, '← 返回城市', {
-            fontSize: '14px', fontFamily: 'monospace', color: '#e74c3c'
+        // Back
+        this.add.text(w / 2, h - 16, '← 返回城市', {
+            fontSize: `${Math.max(11, 13 * this.s)}px`, fontFamily: 'monospace', color: '#e74c3c'
         }).setOrigin(0.5).setInteractive({ useHandCursor: true })
             .on('pointerdown', () => this.scene.start('City', { city: this.cityKey }));
     }
 
     _showStatus() {
         const p = this.player;
+        const s = this.s;
         const y = this.contentY;
-        const style = { fontSize: '14px', fontFamily: 'monospace', color: '#fff', lineSpacing: 8 };
+        const fs = Math.max(10, Math.floor(13 * s));
 
-        this.add.text(40, y, `${p.name}`, { fontSize: '20px', fontFamily: 'monospace', color: '#00d4ff', fontStyle: 'bold' });
-        this.add.text(40, y + 35, [
-            `等級: LV.${p.level}`,
-            `經驗: ${p.exp} / ${p.expToNext}`,
-            ``,
-            `HP: ${p.hp} / ${p.maxHp}`,
-            `MP: ${p.mp} / ${p.maxMp}`,
-            ``,
-            `攻擊力 (ATK): ${p.atk}  (基礎 ${p.baseAtk})`,
-            `防禦力 (DEF): ${p.def}  (基礎 ${p.baseDef})`,
-            `速度 (SPD): ${p.spd}  (基礎 ${p.baseSpd})`,
-            ``,
-            `金幣: ${p.gold}`,
-            `鑽石: ${p.diamonds}`,
-            ``,
-            `已淨化城市: ${p.bossesDefeated.length} / 6`,
-            `已解鎖城市: ${p.citiesUnlocked.join(', ')}`,
-        ].join('\n'), style);
+        this.add.text(10, y, p.name, {
+            fontSize: `${Math.max(14, 18 * s)}px`, fontFamily: 'monospace', color: '#00d4ff', fontStyle: 'bold'
+        });
 
-        // Player sprite preview
-        this.add.image(650, y + 80, 'player-sheet', 1).setScale(4);
+        const lines = [
+            `等級: LV.${p.level}    EXP: ${p.exp}/${p.expToNext}`,
+            `HP: ${p.hp}/${p.maxHp}    MP: ${p.mp}/${p.maxMp}`,
+            `ATK: ${p.atk} (基礎${p.baseAtk})  DEF: ${p.def} (基礎${p.baseDef})`,
+            `SPD: ${p.spd} (基礎${p.baseSpd})`,
+            `金幣: ${p.gold}    鑽石: ${p.diamonds}`,
+            `淨化城市: ${p.bossesDefeated.length}/6`,
+        ];
+        lines.forEach((line, i) => {
+            this.add.text(10, y + 28 + i * (fs + 8), line, {
+                fontSize: `${fs}px`, fontFamily: 'monospace', color: '#bdc3c7',
+                wordWrap: { width: this.contentW }
+            });
+        });
     }
 
     _showInventory() {
         const items = this.player.inventory;
-        const y = this.contentY;
+        const s = this.s;
+        const fs = Math.max(10, Math.floor(12 * s));
+        const rowH = Math.max(26, 32 * s);
+        const w = this.cameras.main.width;
 
         if (items.length === 0) {
-            this.add.text(400, 250, '背包空空如也', { fontSize: '16px', fontFamily: 'monospace', color: '#666' }).setOrigin(0.5);
+            this.add.text(w / 2, 200, '背包空空如也', {
+                fontSize: `${14 * s}px`, fontFamily: 'monospace', color: '#666'
+            }).setOrigin(0.5);
             return;
         }
 
-        items.forEach((item, i) => {
-            const iy = y + i * 35;
-            if (iy > 530) return;
-
+        const maxVisible = Math.floor((this.cameras.main.height - this.contentY - 40) / rowH);
+        items.slice(0, maxVisible).forEach((item, i) => {
+            const y = this.contentY + i * rowH;
             const typeColors = { weapon: '#e74c3c', armor: '#3498db', accessory: '#9b59b6', consumable: '#2ecc71', material: '#f39c12' };
-            const typeLabels = { weapon: '武器', armor: '防具', accessory: '飾品', consumable: '消耗', material: '材料' };
+            const typeLabels = { weapon: '武', armor: '防', accessory: '飾', consumable: '消', material: '材' };
 
-            this.add.text(30, iy, `[${typeLabels[item.type] || item.type}]`, {
-                fontSize: '11px', fontFamily: 'monospace', color: typeColors[item.type] || '#fff'
+            this.add.text(8, y, `[${typeLabels[item.type] || '?'}]`, {
+                fontSize: `${Math.max(8, 10 * s)}px`, fontFamily: 'monospace', color: typeColors[item.type] || '#fff'
             });
-            this.add.text(90, iy, `${item.name}${item.quantity > 1 ? ` x${item.quantity}` : ''}`, {
-                fontSize: '13px', fontFamily: 'monospace', color: '#fff'
+            this.add.text(30, y, `${item.name}${(item.quantity || 1) > 1 ? ` x${item.quantity}` : ''}`, {
+                fontSize: `${fs}px`, fontFamily: 'monospace', color: '#fff'
             });
 
-            let stats = '';
-            if (item.atk) stats += `ATK+${item.atk} `;
-            if (item.def) stats += `DEF+${item.def} `;
-            if (item.hp) stats += `HP+${item.hp} `;
-            if (item.mp) stats += `MP+${item.mp} `;
-            if (item.spd) stats += `SPD+${item.spd} `;
-            if (stats) {
-                this.add.text(400, iy, stats, { fontSize: '11px', fontFamily: 'monospace', color: '#2ecc71' });
-            }
-
-            // Equip button for equipment
             if (['weapon', 'armor', 'accessory'].includes(item.type)) {
-                const isEquipped = this.player.equipment[item.type] === item.id;
-                const eqBtn = this.add.text(700, iy, isEquipped ? '已裝備' : '裝備', {
-                    fontSize: '12px', fontFamily: 'monospace',
-                    color: isEquipped ? '#7f8c8d' : '#f1c40f',
-                }).setInteractive({ useHandCursor: true });
+                const isEq = this.player.equipment[item.type] === item.id;
+                const eqBtn = this.add.text(w - 10, y + 2, isEq ? '已裝備' : '裝備', {
+                    fontSize: `${Math.max(9, 11 * s)}px`, fontFamily: 'monospace',
+                    color: isEq ? '#555' : '#f1c40f',
+                }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
                 eqBtn.on('pointerdown', () => {
-                    if (isEquipped) {
-                        this.player.unequip(item.type);
-                    } else {
-                        this.player.equip(item.id);
-                    }
+                    if (isEq) this.player.unequip(item.type);
+                    else this.player.equip(item.id);
+                    this.audio.playSFX('click');
                     this.scene.restart({ tab: 'inventory', city: this.cityKey });
                 });
             }
@@ -136,20 +131,19 @@ export class MenuScene extends Phaser.Scene {
     }
 
     _showEquipment() {
-        const y = this.contentY;
+        const s = this.s;
         const slots = ['weapon', 'armor', 'accessory'];
         const slotLabels = { weapon: '武器', armor: '防具', accessory: '飾品' };
 
         slots.forEach((slot, i) => {
-            const sy = y + i * 80;
-            this.add.text(40, sy, `【${slotLabels[slot]}】`, {
-                fontSize: '16px', fontFamily: 'monospace', color: '#3498db'
+            const y = this.contentY + i * 70 * s;
+            this.add.text(10, y, `【${slotLabels[slot]}】`, {
+                fontSize: `${Math.max(12, 15 * s)}px`, fontFamily: 'monospace', color: '#3498db'
             });
-
             const equipped = this.player.getEquipped(slot);
             if (equipped) {
-                this.add.text(60, sy + 25, equipped.name, {
-                    fontSize: '14px', fontFamily: 'monospace', color: '#fff'
+                this.add.text(20, y + 22 * s, equipped.name, {
+                    fontSize: `${Math.max(11, 13 * s)}px`, fontFamily: 'monospace', color: '#fff'
                 });
                 let stats = '';
                 if (equipped.atk) stats += `ATK+${equipped.atk} `;
@@ -157,95 +151,98 @@ export class MenuScene extends Phaser.Scene {
                 if (equipped.hp) stats += `HP+${equipped.hp} `;
                 if (equipped.mp) stats += `MP+${equipped.mp} `;
                 if (equipped.spd) stats += `SPD+${equipped.spd} `;
-                this.add.text(60, sy + 45, stats, {
-                    fontSize: '12px', fontFamily: 'monospace', color: '#2ecc71'
+                if (stats) this.add.text(20, y + 40 * s, stats, {
+                    fontSize: `${Math.max(9, 11 * s)}px`, fontFamily: 'monospace', color: '#2ecc71'
                 });
             } else {
-                this.add.text(60, sy + 25, '（未裝備）', {
-                    fontSize: '14px', fontFamily: 'monospace', color: '#666'
+                this.add.text(20, y + 22 * s, '（未裝備）', {
+                    fontSize: `${Math.max(11, 13 * s)}px`, fontFamily: 'monospace', color: '#555'
                 });
             }
         });
     }
 
     _showSkills() {
-        const y = this.contentY;
-        this.player.skills.forEach((skId, i) => {
+        const s = this.s;
+        const rowH = Math.max(34, 42 * s);
+        const maxVisible = Math.floor((this.cameras.main.height - this.contentY - 40) / rowH);
+
+        this.player.skills.slice(0, maxVisible).forEach((skId, i) => {
             const sk = SKILLS[skId];
             if (!sk) return;
-            const sy = y + i * 45;
-            if (sy > 530) return;
-
-            this.add.text(40, sy, sk.name, {
-                fontSize: '14px', fontFamily: 'monospace', color: '#9b59b6', fontStyle: 'bold'
+            const y = this.contentY + i * rowH;
+            this.add.text(10, y, sk.name, {
+                fontSize: `${Math.max(11, 13 * s)}px`, fontFamily: 'monospace', color: '#9b59b6', fontStyle: 'bold'
             });
-            this.add.text(200, sy, `MP: ${sk.mpCost}  CD: ${sk.cooldown || 0}`, {
-                fontSize: '12px', fontFamily: 'monospace', color: '#3498db'
-            });
-            this.add.text(40, sy + 20, sk.desc, {
-                fontSize: '11px', fontFamily: 'monospace', color: '#7f8c8d'
+            this.add.text(10, y + 16 * s, `MP:${sk.mpCost} CD:${sk.cooldown || 0} — ${sk.desc}`, {
+                fontSize: `${Math.max(8, 10 * s)}px`, fontFamily: 'monospace', color: '#7f8c8d',
+                wordWrap: { width: this.contentW }
             });
         });
     }
 
     _showQuests() {
-        const y = this.contentY;
-        const { width } = this.cameras.main;
+        const s = this.s;
+        const w = this.cameras.main.width;
+        let cy = this.contentY;
 
-        // Active quests
-        this.add.text(40, y, '進行中的任務', {
-            fontSize: '16px', fontFamily: 'monospace', color: '#f1c40f', fontStyle: 'bold'
+        // Active
+        this.add.text(10, cy, '進行中', {
+            fontSize: `${Math.max(12, 14 * s)}px`, fontFamily: 'monospace', color: '#f1c40f', fontStyle: 'bold'
         });
+        cy += 22 * s;
 
         if (this.player.activeQuests.length === 0) {
-            this.add.text(60, y + 25, '沒有進行中的任務', {
-                fontSize: '12px', fontFamily: 'monospace', color: '#666'
+            this.add.text(14, cy, '沒有進行中的任務', {
+                fontSize: `${Math.max(9, 11 * s)}px`, fontFamily: 'monospace', color: '#555'
             });
+            cy += 20 * s;
         }
-
-        let currentY = y + 25;
         this.player.activeQuests.forEach(qid => {
             const quest = QUESTS[qid];
             if (!quest) return;
-            this.add.text(60, currentY, `${quest.name}`, {
-                fontSize: '13px', fontFamily: 'monospace', color: '#fff'
+            this.add.text(14, cy, quest.name, {
+                fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#fff'
             });
+            cy += 16 * s;
             quest.objectives.forEach((obj, i) => {
                 const progress = this.player.questProgress[qid]?.[i] || 0;
-                this.add.text(80, currentY + 18, `  ${obj.type === 'kill' ? '討伐' : '收集'} ${obj.target}: ${progress}/${obj.count}`, {
-                    fontSize: '11px', fontFamily: 'monospace', color: progress >= obj.count ? '#2ecc71' : '#7f8c8d'
+                const done = progress >= obj.count;
+                this.add.text(20, cy, `${obj.type === 'kill' ? '討伐' : '收集'} ${obj.target}: ${progress}/${obj.count}`, {
+                    fontSize: `${Math.max(8, 10 * s)}px`, fontFamily: 'monospace', color: done ? '#2ecc71' : '#7f8c8d'
                 });
-                currentY += 18;
+                cy += 14 * s;
             });
-            currentY += 30;
+            cy += 10 * s;
         });
 
-        // Available quests
-        currentY += 20;
-        this.add.text(40, currentY, '可接受的任務', {
-            fontSize: '16px', fontFamily: 'monospace', color: '#3498db', fontStyle: 'bold'
+        // Available
+        cy += 10 * s;
+        this.add.text(10, cy, '可接受', {
+            fontSize: `${Math.max(12, 14 * s)}px`, fontFamily: 'monospace', color: '#3498db', fontStyle: 'bold'
         });
-        currentY += 25;
+        cy += 22 * s;
 
-        const available = QuestSystem.getAvailableQuests(this.player, this.cityKey);
-        available.forEach(quest => {
-            this.add.text(60, currentY, quest.name, {
-                fontSize: '13px', fontFamily: 'monospace', color: '#fff'
+        QuestSystem.getAvailableQuests(this.player, this.cityKey).forEach(quest => {
+            if (cy > this.cameras.main.height - 50) return;
+            this.add.text(14, cy, quest.name, {
+                fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#fff'
             });
-            this.add.text(60, currentY + 16, quest.desc, {
-                fontSize: '10px', fontFamily: 'monospace', color: '#7f8c8d'
-            });
-
-            const acceptBtn = this.add.text(700, currentY + 5, '接受', {
-                fontSize: '12px', fontFamily: 'monospace', color: '#2ecc71',
-                backgroundColor: '#2c3e50', padding: { x: 8, y: 3 }
-            }).setInteractive({ useHandCursor: true });
+            const acceptBtn = this.add.text(w - 10, cy, '接受', {
+                fontSize: `${Math.max(9, 11 * s)}px`, fontFamily: 'monospace', color: '#2ecc71',
+                backgroundColor: '#2c3e50', padding: { x: 6, y: 2 }
+            }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
             acceptBtn.on('pointerdown', () => {
                 QuestSystem.acceptQuest(this.player, quest.id);
+                this.audio.playSFX('click');
                 this.scene.restart({ tab: 'quest', city: this.cityKey });
             });
-
-            currentY += 45;
+            cy += 14 * s;
+            this.add.text(14, cy, quest.desc, {
+                fontSize: `${Math.max(8, 9 * s)}px`, fontFamily: 'monospace', color: '#7f8c8d',
+                wordWrap: { width: this.contentW - 80 }
+            });
+            cy += 24 * s;
         });
     }
 }

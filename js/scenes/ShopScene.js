@@ -1,4 +1,4 @@
-// Shop scene for buying/selling items and diamond store
+// Shop scene - responsive layout
 import { ShopSystem } from '../systems/ShopSystem.js';
 import { ITEMS } from '../data/items.js';
 
@@ -14,192 +14,149 @@ export class ShopScene extends Phaser.Scene {
     }
 
     create() {
-        const { width, height } = this.cameras.main;
         this.player = this.registry.get('player');
         this.audio = this.registry.get('audio');
         this.audio.playBGM('shop');
+        this._buildUI();
+    }
+
+    _buildUI() {
+        const w = this.cameras.main.width;
+        const h = this.cameras.main.height;
+        const s = Math.min(w / 800, h / 600);
         this.cameras.main.setBackgroundColor('#0a0a1a');
 
         // Title
-        this.add.text(width / 2, 20, this.title, {
-            fontSize: '22px', fontFamily: 'monospace', color: '#f1c40f', fontStyle: 'bold'
+        this.add.text(w / 2, 14, this.title, {
+            fontSize: `${Math.max(16, 22 * s)}px`, fontFamily: 'monospace', color: '#f1c40f', fontStyle: 'bold'
         }).setOrigin(0.5);
 
-        // Player gold/diamonds
-        this.goldText = this.add.text(20, 50, '', { fontSize: '13px', fontFamily: 'monospace', color: '#f1c40f' });
-        this.diamondText = this.add.text(200, 50, '', { fontSize: '13px', fontFamily: 'monospace', color: '#00d4ff' });
-        this._updateCurrency();
+        // Currency
+        this.goldText = this.add.text(12, 40, `金幣: ${this.player.gold}`, {
+            fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#f1c40f'
+        });
+        this.diamondText = this.add.text(w / 2, 40, `鑽石: ${this.player.diamonds}`, {
+            fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#00d4ff'
+        });
+
+        // Recharge button for diamond shop
+        if (this.shopType === 'diamond') {
+            const reBtn = this.add.text(w - 12, 40, '充值鑽石', {
+                fontSize: `${Math.max(9, 11 * s)}px`, fontFamily: 'monospace', color: '#00d4ff',
+                backgroundColor: '#2c3e50', padding: { x: 6, y: 2 }
+            }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
+            reBtn.on('pointerdown', () => this._showRecharge());
+        }
 
         // Item list
-        this.itemContainer = this.add.container(0, 0);
-        this._buildShopList();
+        let items = this.shopType === 'diamond' ? ShopSystem.getDiamondShopItems() : ShopSystem.getShopItems(this.cityKey, this.shopType);
+        const startY = 62;
+        const rowH = Math.max(40, 48 * s);
+        const maxItems = Math.floor((h - startY - 60) / rowH);
 
-        // Message area
-        this.msgText = this.add.text(width / 2, height - 60, '', {
-            fontSize: '14px', fontFamily: 'monospace', color: '#2ecc71'
-        }).setOrigin(0.5);
+        items.slice(0, maxItems).forEach((item, i) => {
+            const y = startY + i * rowH;
+            this.add.rectangle(w / 2, y + rowH / 2, w - 12, rowH - 3, 0x1a1a2e, 0.8).setStrokeStyle(1, 0x2c3e50);
 
-        // Back button
-        const backBtn = this.add.text(width / 2, height - 25, '← 返回城市', {
-            fontSize: '14px', fontFamily: 'monospace', color: '#e74c3c'
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-        backBtn.on('pointerdown', () => this.scene.start('City', { city: this.cityKey }));
-
-        // Tabs for diamond shop
-        if (this.shopType === 'diamond') {
-            this._createDiamondTabs();
-        }
-    }
-
-    _buildShopList() {
-        this.itemContainer.removeAll(true);
-
-        let items;
-        if (this.shopType === 'diamond') {
-            items = ShopSystem.getDiamondShopItems();
-        } else {
-            items = ShopSystem.getShopItems(this.cityKey, this.shopType);
-        }
-
-        const startY = 80;
-        items.forEach((item, i) => {
-            const y = startY + i * 50;
-            if (y > 500) return;
-
-            // Item row background
-            const bg = this.add.rectangle(400, y + 15, 750, 44, 0x1a1a2e, 0.8).setStrokeStyle(1, 0x2c3e50);
-            this.itemContainer.add(bg);
-
-            // Item name
+            // Name
             const nameColor = item.diamondPrice ? '#00d4ff' : '#fff';
-            this.itemContainer.add(this.add.text(40, y, item.name, {
-                fontSize: '14px', fontFamily: 'monospace', color: nameColor, fontStyle: 'bold'
-            }));
+            this.add.text(10, y + 4, item.name, {
+                fontSize: `${Math.max(11, 13 * s)}px`, fontFamily: 'monospace', color: nameColor, fontStyle: 'bold'
+            });
 
-            // Item description
-            this.itemContainer.add(this.add.text(40, y + 18, item.desc || '', {
-                fontSize: '10px', fontFamily: 'monospace', color: '#7f8c8d'
-            }));
-
-            // Stats
+            // Desc + stats
+            let desc = item.desc || '';
             let stats = '';
             if (item.atk) stats += `ATK+${item.atk} `;
             if (item.def) stats += `DEF+${item.def} `;
             if (item.hp) stats += `HP+${item.hp} `;
             if (item.mp) stats += `MP+${item.mp} `;
             if (item.spd) stats += `SPD+${item.spd} `;
-            if (stats) {
-                this.itemContainer.add(this.add.text(400, y + 5, stats, {
-                    fontSize: '11px', fontFamily: 'monospace', color: '#2ecc71'
-                }));
-            }
+            this.add.text(10, y + 4 + 16 * s, stats || desc.substring(0, 20), {
+                fontSize: `${Math.max(8, 10 * s)}px`, fontFamily: 'monospace', color: '#7f8c8d'
+            });
 
             // Price
             const price = item.diamondPrice || item.price;
-            const currency = item.diamondPrice ? '鑽石' : '金幣';
-            const priceColor = item.diamondPrice ? '#00d4ff' : '#f1c40f';
-            this.itemContainer.add(this.add.text(600, y + 2, `${price} ${currency}`, {
-                fontSize: '13px', fontFamily: 'monospace', color: priceColor
-            }));
+            const currency = item.diamondPrice ? '鑽' : '金';
+            this.add.text(w - 80, y + 6, `${price}${currency}`, {
+                fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: item.diamondPrice ? '#00d4ff' : '#f1c40f'
+            });
 
             // Buy button
-            const buyBtn = this.add.text(720, y + 5, '購買', {
-                fontSize: '13px', fontFamily: 'monospace', color: '#2ecc71',
-                backgroundColor: '#2c3e50', padding: { x: 8, y: 4 }
-            }).setInteractive({ useHandCursor: true });
-            buyBtn.on('pointerover', () => buyBtn.setColor('#fff'));
-            buyBtn.on('pointerout', () => buyBtn.setColor('#2ecc71'));
-            buyBtn.on('pointerdown', () => this._buyItem(item.id));
-            this.itemContainer.add(buyBtn);
+            const buyBtn = this.add.text(w - 12, y + rowH / 2, '購買', {
+                fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#2ecc71',
+                backgroundColor: '#2c3e50', padding: { x: 6, y: 3 }
+            }).setOrigin(1, 0.5).setInteractive({ useHandCursor: true });
+            buyBtn.on('pointerdown', () => {
+                const result = ShopSystem.buyItem(this.player, item.id);
+                this.audio.playSFX(result.success ? 'buy' : 'error');
+                this._showMsg(result.msg, result.success);
+                this.goldText.setText(`金幣: ${this.player.gold}`);
+                this.diamondText.setText(`鑽石: ${this.player.diamonds}`);
+            });
         });
 
         if (items.length === 0) {
-            this.itemContainer.add(this.add.text(400, 200, '目前沒有商品', {
-                fontSize: '16px', fontFamily: 'monospace', color: '#666'
-            }).setOrigin(0.5));
-        }
-    }
-
-    _createDiamondTabs() {
-        const { width } = this.cameras.main;
-
-        // Recharge tab
-        const rechargeBtn = this.add.text(width - 120, 50, '💎 充值鑽石', {
-            fontSize: '12px', fontFamily: 'monospace', color: '#00d4ff',
-            backgroundColor: '#2c3e50', padding: { x: 8, y: 4 }
-        }).setInteractive({ useHandCursor: true });
-        rechargeBtn.on('pointerdown', () => this._showRechargePanel());
-    }
-
-    _showRechargePanel() {
-        const { width, height } = this.cameras.main;
-
-        if (this.rechargePanel) {
-            this.rechargePanel.setVisible(!this.rechargePanel.visible);
-            return;
+            this.add.text(w / 2, h / 2, '目前沒有商品', {
+                fontSize: `${14 * s}px`, fontFamily: 'monospace', color: '#666'
+            }).setOrigin(0.5);
         }
 
-        this.rechargePanel = this.add.container(0, 0);
-        const bg = this.add.image(width / 2, height / 2, 'ui-system-window');
-        this.rechargePanel.add(bg);
+        // Message
+        this.msgText = this.add.text(w / 2, h - 50, '', {
+            fontSize: `${Math.max(11, 13 * s)}px`, fontFamily: 'monospace', color: '#2ecc71'
+        }).setOrigin(0.5);
 
-        this.rechargePanel.add(this.add.text(width / 2, height / 2 - 120, '鑽石充值', {
-            fontSize: '20px', fontFamily: 'monospace', color: '#00d4ff'
+        // Back
+        this.add.text(w / 2, h - 20, '← 返回城市', {
+            fontSize: `${Math.max(11, 13 * s)}px`, fontFamily: 'monospace', color: '#e74c3c'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true })
+            .on('pointerdown', () => this.scene.start('City', { city: this.cityKey }));
+    }
+
+    _showMsg(text, success) {
+        this.msgText.setText(text);
+        this.msgText.setColor(success ? '#2ecc71' : '#e74c3c');
+        this.tweens.add({ targets: this.msgText, alpha: { from: 1, to: 0 }, duration: 3000 });
+    }
+
+    _showRecharge() {
+        const w = this.cameras.main.width, h = this.cameras.main.height;
+        const s = Math.min(w / 800, h / 600);
+
+        if (this._rechargePanel) { this._rechargePanel.destroy(); this._rechargePanel = null; return; }
+        this._rechargePanel = this.add.container(0, 0);
+        const boxW = Math.min(380, w * 0.85);
+        this._rechargePanel.add(this.add.rectangle(w / 2, h / 2, boxW, 240 * s, 0x0a0a1e, 0.97).setStrokeStyle(2, 0x00d4ff));
+        this._rechargePanel.add(this.add.text(w / 2, h / 2 - 90 * s, '鑽石充值', {
+            fontSize: `${16 * s}px`, fontFamily: 'monospace', color: '#00d4ff'
         }).setOrigin(0.5));
 
-        const packages = ShopSystem.getDiamondPackages();
-        packages.forEach((pkg, i) => {
-            const y = height / 2 - 60 + i * 45;
-            const btn = this.add.rectangle(width / 2, y, 300, 35, 0x2c3e50)
+        ShopSystem.getDiamondPackages().forEach((pkg, i) => {
+            const y = h / 2 - 50 * s + i * 36 * s;
+            const btn = this.add.rectangle(w / 2, y, boxW - 40, 28 * s, 0x2c3e50)
                 .setInteractive({ useHandCursor: true }).setStrokeStyle(1, 0x00d4ff);
-            const txt = this.add.text(width / 2, y, pkg.label, {
-                fontSize: '14px', fontFamily: 'monospace', color: '#fff'
+            const txt = this.add.text(w / 2, y, pkg.label, {
+                fontSize: `${Math.max(10, 12 * s)}px`, fontFamily: 'monospace', color: '#fff'
             }).setOrigin(0.5);
-
-            btn.on('pointerover', () => txt.setColor('#00d4ff'));
-            btn.on('pointerout', () => txt.setColor('#fff'));
             btn.on('pointerdown', () => {
-                // ECPay integration placeholder
-                this._initiateECPayPayment(pkg);
+                // Test mode: instant grant
+                this.player.addDiamonds(pkg.diamonds);
+                this.diamondText.setText(`鑽石: ${this.player.diamonds}`);
+                this.audio.playSFX('levelup');
+                this._showMsg(`[測試模式] 已發放 ${pkg.diamonds} 鑽石！`, true);
+                this._rechargePanel.destroy();
+                this._rechargePanel = null;
             });
-
-            this.rechargePanel.add(btn);
-            this.rechargePanel.add(txt);
+            this._rechargePanel.add(btn);
+            this._rechargePanel.add(txt);
         });
 
-        const closeBtn = this.add.text(width / 2, height / 2 + 120, '關閉', {
-            fontSize: '14px', fontFamily: 'monospace', color: '#e74c3c'
+        const closeBtn = this.add.text(w / 2, h / 2 + 100 * s, '關閉', {
+            fontSize: `${12 * s}px`, fontFamily: 'monospace', color: '#e74c3c'
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-        closeBtn.on('pointerdown', () => this.rechargePanel.setVisible(false));
-        this.rechargePanel.add(closeBtn);
-    }
-
-    _initiateECPayPayment(pkg) {
-        // In production, this would call the Vercel API endpoint
-        // For now, show a message about ECPay integration
-        const { width, height } = this.cameras.main;
-        this.msgText.setText(`綠界付款功能開發中...\n方案：${pkg.label}`);
-        this.msgText.setColor('#f39c12');
-
-        // Demo: give diamonds for testing
-        this.player.addDiamonds(pkg.diamonds);
-        this._updateCurrency();
-        this.time.delayedCall(500, () => {
-            this.msgText.setText(`[測試模式] 已發放 ${pkg.diamonds} 鑽石！`);
-            this.msgText.setColor('#2ecc71');
-        });
-    }
-
-    _buyItem(itemId) {
-        const result = ShopSystem.buyItem(this.player, itemId);
-        this.msgText.setText(result.msg);
-        this.msgText.setColor(result.success ? '#2ecc71' : '#e74c3c');
-        this.audio.playSFX(result.success ? 'buy' : 'error');
-        this._updateCurrency();
-    }
-
-    _updateCurrency() {
-        this.goldText.setText(`金幣: ${this.player.gold}`);
-        this.diamondText.setText(`鑽石: ${this.player.diamonds}`);
+        closeBtn.on('pointerdown', () => { this._rechargePanel.destroy(); this._rechargePanel = null; });
+        this._rechargePanel.add(closeBtn);
     }
 }

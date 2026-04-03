@@ -48,14 +48,27 @@ export class BattleScene extends Phaser.Scene {
         // Player sprite (left 25%) — prefer hero portrait
         const heroKey = this.textures.exists('hero-portrait') ? 'hero-portrait' : 'player-sheet';
         const heroFrame = heroKey === 'player-sheet' ? 7 : undefined;
-        this.playerSprite = this.add.image(w * 0.2, fieldH * 0.65, heroKey, heroFrame)
-            .setScale(heroKey === 'hero-portrait' ? Math.max(0.15, 0.3 * s) : Math.max(1.5, 3 * s));
+        this.playerSprite = this.add.image(w * 0.2, fieldH * 0.65, heroKey, heroFrame);
+        if (heroKey === 'hero-portrait') {
+            const targetH = fieldH * 0.65;
+            this.playerSprite.setScale(targetH / this.playerSprite.height);
+        } else {
+            this.playerSprite.setScale(Math.max(1.5, 3 * s));
+        }
 
         // Monster sprite (right 75%) — prefer Grok image
         const grokSprites = this.registry.get('grokSprites') || {};
+        const isGrokMonster = !!grokSprites[this.monsterData.sprite];
         const monsterKey = grokSprites[this.monsterData.sprite] || this.monsterData.sprite;
-        this.monsterSprite = this.add.image(w * 0.75, fieldH * 0.5, monsterKey)
-            .setScale(this.monsterData.isBoss ? Math.max(1.5, 2.5 * s) : Math.max(1, 2 * s));
+        this.monsterSprite = this.add.image(w * 0.75, fieldH * 0.5, monsterKey);
+        if (isGrokMonster) {
+            // Grok images are large (~1024px), fit them into the battle field
+            const targetH = fieldH * (this.monsterData.isBoss ? 0.7 : 0.5);
+            const imgH = this.monsterSprite.height;
+            this.monsterSprite.setScale(targetH / imgH);
+        } else {
+            this.monsterSprite.setScale(this.monsterData.isBoss ? Math.max(1.5, 2.5 * s) : Math.max(1, 2 * s));
+        }
 
         // --- STATS BARS ---
         // Monster info (top-right)

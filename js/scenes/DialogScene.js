@@ -41,46 +41,46 @@ export class DialogScene extends Phaser.Scene {
         const w = this.cameras.main.width;
         const h = this.cameras.main.height;
         const s = Math.min(w / 800, h / 600);
-        const fs = Math.max(11, Math.floor(14 * s));
+        const fs = Math.max(16, Math.floor(20 * s));
 
         // Overlay
         this.add.rectangle(w / 2, h / 2, w, h, 0x000000, 0.3);
 
-        // Dialog box - 90% width, bottom 28% of screen
-        const boxW = w * 0.92;
-        const boxH = Math.max(120, h * 0.28);
-        const boxY = h - boxH / 2 - 8;
+        // Dialog box - 94% width, bottom 38% of screen for better readability
+        const boxW = w * 0.94;
+        const boxH = Math.max(160, h * 0.38);
+        const boxY = h - boxH / 2 - 6;
         const boxX = w / 2;
 
         // Box background
-        const box = this.add.rectangle(boxX, boxY, boxW, boxH, 0x0a0a1e, 0.94);
+        const box = this.add.rectangle(boxX, boxY, boxW, boxH, 0x0a0a1e, 0.96);
         box.setStrokeStyle(2, 0x00d4ff);
 
         // Inner padding
-        const padX = boxX - boxW / 2 + 16;
-        const padTop = boxY - boxH / 2 + 10;
-        const textW = boxW - 32;
+        const padX = boxX - boxW / 2 + 20;
+        const padTop = boxY - boxH / 2 + 14;
+        const textW = boxW - 40;
 
         // Speaker name
         this.speakerText = this.add.text(padX, padTop, '', {
-            fontSize: `${Math.max(12, Math.floor(15 * s))}px`,
+            fontSize: `${Math.max(16, Math.floor(20 * s))}px`,
             fontFamily: 'monospace',
             color: '#00d4ff',
             fontStyle: 'bold',
         });
 
-        // Dialog text - key fix: wordWrap uses actual available width
-        this.dialogText = this.add.text(padX, padTop + 22 * s, '', {
+        // Dialog text - large readable font, auto word wrap
+        this.dialogText = this.add.text(padX, padTop + 30 * s, '', {
             fontSize: `${fs}px`,
             fontFamily: 'monospace',
             color: '#fff',
             wordWrap: { width: textW, useAdvancedWrap: true },
-            lineSpacing: Math.max(4, 6 * s),
+            lineSpacing: Math.max(6, 10 * s),
         });
 
         // Continue prompt
-        this.promptText = this.add.text(boxX + boxW / 2 - 10, boxY + boxH / 2 - 12, '▼ 點擊繼續', {
-            fontSize: `${Math.max(9, Math.floor(11 * s))}px`,
+        this.promptText = this.add.text(boxX + boxW / 2 - 12, boxY + boxH / 2 - 14, '▼ 點擊繼續', {
+            fontSize: `${Math.max(12, Math.floor(14 * s))}px`,
             fontFamily: 'monospace',
             color: '#7f8c8d'
         }).setOrigin(1, 0.5);

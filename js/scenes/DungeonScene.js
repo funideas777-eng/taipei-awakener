@@ -86,10 +86,13 @@ export class DungeonScene extends Phaser.Scene {
             if (!monsterData) return;
             const px = offsetX + m.x * tileSize + tileSize / 2;
             const py = offsetY + m.y * tileSize + tileSize / 2;
-            const mScale = Math.max(0.3, tileSize / 40);
             const spriteKey = grokSprites[monsterData.sprite] || monsterData.sprite;
-            const sprite = this.add.image(px, py, spriteKey).setScale(mScale)
-                .setInteractive({ useHandCursor: true });
+            const sprite = this.add.image(px, py, spriteKey);
+            // Scale Grok images (large) to fit tile, canvas sprites use old scale
+            const isGrok = spriteKey !== monsterData.sprite;
+            const mScale = isGrok ? (tileSize * 0.9) / sprite.height : Math.max(0.3, tileSize / 40);
+            sprite.setScale(mScale);
+            sprite.setInteractive({ useHandCursor: true });
             this.tweens.add({ targets: sprite, y: py - 2, duration: 400 + Math.random() * 400, yoyo: true, repeat: -1 });
             sprite.on('pointerdown', () => this._startBattle(monsterData, sprite));
             this.monsterSprites.push({ sprite, data: monsterData, gridX: m.x, gridY: m.y });

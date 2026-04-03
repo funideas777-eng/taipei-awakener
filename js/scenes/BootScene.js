@@ -65,6 +65,15 @@ export class BootScene extends Phaser.Scene {
         this.load.image('dungeon-bg-time', 'assets/tiles/dungeon-time.jpg');
         this.load.image('dungeon-bg-abyss', 'assets/tiles/dungeon-abyss.jpg');
 
+        // Building top-down views (for free-movement city map)
+        this.load.image('grok-building-guild', 'assets/sprites/building-guild-topdown.jpg');
+        this.load.image('grok-building-weapon', 'assets/sprites/building-weapon-topdown.jpg');
+        this.load.image('grok-building-armor', 'assets/sprites/building-armor-topdown.jpg');
+        this.load.image('grok-building-item', 'assets/sprites/building-item-topdown.jpg');
+        this.load.image('grok-building-magic', 'assets/sprites/building-magic-topdown.jpg');
+        this.load.image('grok-building-inn', 'assets/sprites/building-inn-topdown.jpg');
+        this.load.image('grok-building-diamond', 'assets/sprites/building-diamond-topdown.jpg');
+
         // UI
         this.load.image('ui-elements', 'assets/ui/ui-elements.jpg');
         this.load.image('item-icons', 'assets/ui/item-icons.jpg');
@@ -89,6 +98,14 @@ export class BootScene extends Phaser.Scene {
             'boss-smog-giant': 'grok-boss-smog',
             'boss-time-corruptor': 'grok-boss-time',
             'boss-abyss-lord': 'grok-boss-abyss',
+            // Building overrides for city map
+            'building-guild': 'grok-building-guild',
+            'building-weapon': 'grok-building-weapon',
+            'building-armor': 'grok-building-armor',
+            'building-item': 'grok-building-item',
+            'building-magic': 'grok-building-magic',
+            'building-inn': 'grok-building-inn',
+            'building-diamond': 'grok-building-diamond',
         };
         // Store the mapping for scenes to use
         this.registry.set('grokSprites', grokOverrides);

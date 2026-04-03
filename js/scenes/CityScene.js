@@ -1,8 +1,10 @@
-// City exploration scene - responsive top-down map
+// City scene - free movement RPG with scrolling camera
 import { CITIES, CITY_ORDER } from '../data/cities.js';
 import { CITY_MONSTERS, CITY_BOSSES, MONSTERS } from '../data/monsters.js';
 import { PORTAL_RANKS } from '../data/dungeons.js';
 import { SaveSystem } from '../systems/SaveSystem.js';
+import { MapGenerator } from '../utils/MapGenerator.js';
+import { VirtualJoystick } from '../utils/VirtualJoystick.js';
 
 export class CityScene extends Phaser.Scene {
     constructor() {
@@ -20,131 +22,288 @@ export class CityScene extends Phaser.Scene {
         this.audio = this.registry.get('audio');
         this.audio.playBGM('city');
 
-        this._buildUI();
-    }
+        const TILE = 32;
+        this.TILE = TILE;
+        this.SPEED = 160;
 
-    _buildUI() {
-        const w = this.cameras.main.width;
-        const h = this.cameras.main.height;
-        const s = Math.min(w / 800, h / 600);
+        // Generate map
+        const mapData = MapGenerator.generateCityMap(this.city);
+        this.mapData = mapData;
+        const worldW = mapData.width * TILE;
+        const worldH = mapData.height * TILE;
 
+        // Physics world bounds
+        this.physics.world.setBounds(0, 0, worldW, worldH);
+
+        // Background
         this.cameras.main.setBackgroundColor('#1a2a1a');
-
-        // --- CITY MAP (top 78%) ---
-        const mapAreaH = h * 0.78;
-        const mapW = 25, mapH = 15;
-        const tileSize = Math.min(Math.floor((w - 10) / mapW), Math.floor((mapAreaH - 30) / mapH));
-        const offsetX = (w - mapW * tileSize) / 2;
-        const offsetY = 28;
-
-        // City background image
-        const cityBgKey = `city-bg-${this.cityKey}`;
-        if (this.textures.exists(cityBgKey)) {
-            const bg = this.add.image(w / 2, offsetY + mapAreaH / 2 - 14, cityBgKey);
-            bg.setDisplaySize(mapW * tileSize, mapH * tileSize);
-            bg.setAlpha(0.35);
+        const bgKey = `city-bg-${this.cityKey}`;
+        if (this.textures.exists(bgKey)) {
+            this.add.image(worldW / 2, worldH / 2, bgKey)
+                .setDisplaySize(worldW, worldH).setAlpha(0.18).setDepth(0);
         }
 
-        // Draw tiles
-        for (let y = 0; y < mapH; y++) {
-            for (let x = 0; x < mapW; x++) {
-                const px = offsetX + x * tileSize + tileSize / 2;
-                const py = offsetY + y * tileSize + tileSize / 2;
-                if (x === 0 || x === mapW - 1 || y === 0 || y === mapH - 1) {
-                    this.add.rectangle(px, py, tileSize - 1, tileSize - 1, 0x5d4e37);
-                } else if (x === 12 || y === 7) {
-                    this.add.rectangle(px, py, tileSize - 1, tileSize - 1, 0x606060);
-                } else {
-                    this.add.rectangle(px, py, tileSize - 1, tileSize - 1, 0x4a7c59);
+        // Render ground tiles
+        this._renderMap(mapData, TILE, worldW, worldH);
+
+        // Place buildings & portals
+        this.interactables = [];
+        this._placeBuildings(TILE);
+        this._placePortals(TILE);
+
+        // Create player sprite
+        this._createPlayer(mapData, TILE);
+
+        // Camera
+        this.cameras.main.setBounds(0, 0, worldW, worldH);
+        this.cameras.main.startFollow(this.playerSprite, true, 0.1, 0.1);
+
+        // Controls
+        this.cursors = this.input.keyboard.createCursorKeys();
+        this.wasd = this.input.keyboard.addKeys('W,A,S,D');
+        this.input.keyboard.on('keydown-SPACE', () => this._interact());
+        this.input.keyboard.on('keydown-E', () => this._interact());
+
+        // HUD (fixed to camera)
+        const camW = this.cameras.main.width;
+        const camH = this.cameras.main.height;
+        this._createHUD(camW, camH);
+
+        // Virtual joystick
+        this.joystick = new VirtualJoystick(this, 80, camH - 90);
+
+        // Action button
+        const aBtnR = 30;
+        this.actBtn = this.add.circle(camW - 55, camH - 90, aBtnR, 0x2c3e50, 0.6)
+            .setStrokeStyle(2, 0x00d4ff, 0.5).setScrollFactor(0).setDepth(1000)
+            .setInteractive({ useHandCursor: true });
+        this.add.text(camW - 55, camH - 90, 'A', {
+            fontSize: '22px', fontFamily: 'monospace', color: '#00d4ff', fontStyle: 'bold'
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(1001);
+        this.actBtn.on('pointerdown', () => this._interact());
+
+        // Interaction prompt
+        this.interactPrompt = this.add.text(camW / 2, camH - 150, '', {
+            fontSize: '18px', fontFamily: 'monospace', color: '#f1c40f',
+            backgroundColor: '#000000cc', padding: { x: 10, y: 5 }
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(999).setVisible(false);
+
+        this.currentInteractable = null;
+        this.travelContainer = null;
+    }
+
+    update() {
+        if (this.travelContainer) {
+            this.playerSprite.setVelocity(0, 0);
+            this.playerSprite.stop();
+            return;
+        }
+
+        this._handleMovement();
+        this._checkProximity();
+        this._updateHUD();
+    }
+
+    // --- MAP RENDERING ---
+    _renderMap(mapData, T, worldW, worldH) {
+        const gfx = this.add.graphics().setDepth(1);
+        const COLORS = {
+            0: 0x4a7c59, // grass
+            1: 0x5d4e37, // wall
+            2: 0x606060, // road
+            3: 0x2980b9, // water
+            4: 0x3a6c49, // park/dark grass
+            5: 0x707070, // plaza
+            6: 0x4d3e27, // building ground
+        };
+
+        for (let y = 0; y < mapData.height; y++) {
+            for (let x = 0; x < mapData.width; x++) {
+                const cell = mapData.map[y][x];
+                gfx.fillStyle(COLORS[cell] ?? 0x4a7c59, cell === 3 ? 0.7 : 1);
+                gfx.fillRect(x * T, y * T, T, T);
+            }
+        }
+
+        // Grid lines for road detail
+        gfx.lineStyle(1, 0x555555, 0.15);
+        for (let y = 0; y < mapData.height; y++) {
+            for (let x = 0; x < mapData.width; x++) {
+                if (mapData.map[y][x] === 2 || mapData.map[y][x] === 5) {
+                    gfx.strokeRect(x * T, y * T, T, T);
                 }
             }
         }
 
-        // City name
-        this.add.text(w / 2, 8, this.city.name, {
-            fontSize: `${Math.max(18, 24 * s)}px`, fontFamily: 'monospace', color: this.city.color, fontStyle: 'bold'
-        }).setOrigin(0.5);
+        // Collision bodies for walls and buildings
+        this.wallGroup = this.physics.add.staticGroup();
+        for (let y = 0; y < mapData.height; y++) {
+            for (let x = 0; x < mapData.width; x++) {
+                const cell = mapData.map[y][x];
+                if (cell === 1 || cell === 3 || cell === 6) {
+                    const body = this.add.zone(x * T + T / 2, y * T + T / 2, T, T);
+                    this.physics.add.existing(body, true);
+                    this.wallGroup.add(body);
+                }
+            }
+        }
+    }
 
-        // Buildings
-        const bldgScale = Math.max(0.5, tileSize / 48);
+    // --- BUILDINGS ---
+    _placeBuildings(T) {
         this.city.buildings.forEach(b => {
-            const bx = offsetX + b.x * tileSize + tileSize / 2;
-            const by = offsetY + b.y * tileSize + tileSize / 2;
-            const sprite = this.add.image(bx, by, `building-${b.type}`)
-                .setScale(bldgScale).setInteractive({ useHandCursor: true });
-            this.add.text(bx, by + tileSize / 2 + 3, b.name, {
-                fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color: '#fff',
-                backgroundColor: '#000000cc', padding: { x: 4, y: 2 }
-            }).setOrigin(0.5);
-            sprite.on('pointerdown', () => { this.audio.playSFX('click'); this._onBuildingClick(b); });
-        });
+            const bx = b.x * T + T / 2;
+            const by = b.y * T + T / 2;
+            const bw = (b.w || 3) * T;
+            const bh = (b.h || 3) * T;
 
-        // Portals
+            // Building sprite (prefer Grok image if available)
+            const baseSpriteKey = `building-${b.type}`;
+            const grokSprites = this.registry.get('grokSprites') || {};
+            const spriteKey = grokSprites[baseSpriteKey] || baseSpriteKey;
+            if (this.textures.exists(spriteKey)) {
+                const sprite = this.add.image(bx, by, spriteKey).setDepth(5);
+                const scale = Math.min(bw / sprite.width, bh / sprite.height) * 0.85;
+                sprite.setScale(scale);
+            }
+
+            // Label above building
+            this.add.text(bx, by - bh / 2 - 8, b.name, {
+                fontSize: '15px', fontFamily: 'monospace', color: '#fff',
+                backgroundColor: '#000000cc', padding: { x: 5, y: 2 }
+            }).setOrigin(0.5).setDepth(6);
+
+            // Interaction zone (in front of building)
+            this.interactables.push({
+                x: bx, y: by + bh / 2 + T,
+                type: 'building',
+                data: b,
+                name: b.name
+            });
+        });
+    }
+
+    // --- PORTALS ---
+    _placePortals(T) {
         this.city.portalZones.forEach(p => {
-            const px = offsetX + p.x * tileSize + tileSize / 2;
-            const py = offsetY + p.y * tileSize + tileSize / 2;
+            const px = p.x * T + T / 2;
+            const py = p.y * T + T / 2;
+
             const portal = this.add.image(px, py, `portal-${p.rank}`)
-                .setScale(bldgScale).setInteractive({ useHandCursor: true });
+                .setScale(1.8).setDepth(5);
             this.tweens.add({
                 targets: portal,
-                scaleX: { from: bldgScale * 0.9, to: bldgScale * 1.1 },
-                scaleY: { from: bldgScale * 0.9, to: bldgScale * 1.1 },
+                scaleX: { from: 1.5, to: 2.1 },
+                scaleY: { from: 1.5, to: 2.1 },
                 duration: 1000, yoyo: true, repeat: -1,
             });
-            this.add.text(px, py + tileSize / 2 + 3, `${p.rank}級 LV${p.minLevel}+`, {
-                fontSize: `${Math.max(14, 16 * s)}px`, fontFamily: 'monospace', color: PORTAL_RANKS[p.rank].color,
+            this.add.text(px, py - T - 4, `${p.rank}級 LV${p.minLevel}+`, {
+                fontSize: '14px', fontFamily: 'monospace',
+                color: PORTAL_RANKS[p.rank].color,
                 backgroundColor: '#000000cc', padding: { x: 4, y: 2 }
-            }).setOrigin(0.5);
-            portal.on('pointerdown', () => { this.audio.playSFX('portal'); this._onPortalClick(p); });
-        });
+            }).setOrigin(0.5).setDepth(6);
 
-        // --- BOTTOM BAR (bottom 18%) ---
-        const barY = mapAreaH;
-        const barH = h - barY;
-        this.add.rectangle(w / 2, barY + barH / 2, w, barH, 0x0a0a1a, 0.96);
-        this.add.rectangle(w / 2, barY, w, 1, 0x3498db);
-
-        // Player stats (left)
-        const statFs = Math.max(14, Math.floor(16 * s));
-        this.add.text(8, barY + 6, `${this.player.name} LV.${this.player.level}`, {
-            fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#00d4ff', fontStyle: 'bold'
+            this.interactables.push({
+                x: px, y: py,
+                type: 'portal',
+                data: p,
+                name: `${p.rank}級傳送門`
+            });
         });
-        this.add.text(8, barY + 6 + 22 * s, `HP:${this.player.hp}/${this.player.maxHp}  MP:${this.player.mp}/${this.player.maxMp}`, {
-            fontSize: `${statFs}px`, fontFamily: 'monospace', color: '#bdc3c7'
-        });
-        this.add.text(8, barY + 6 + 40 * s, `金幣:${this.player.gold}  鑽石:${this.player.diamonds}`, {
-            fontSize: `${statFs}px`, fontFamily: 'monospace', color: '#f1c40f'
-        });
+    }
 
-        // Action buttons (right)
-        const btns = [
-            { label: '背包', act: () => this.scene.start('Menu', { tab: 'inventory', city: this.cityKey }) },
-            { label: '狀態', act: () => this.scene.start('Menu', { tab: 'status', city: this.cityKey }) },
-            { label: '任務', act: () => this.scene.start('Menu', { tab: 'quest', city: this.cityKey }) },
-            { label: '移動', act: () => this._showCityTravel() },
-        ];
-        const btnW = Math.min(72, (w * 0.55) / btns.length - 4);
-        const btnH = Math.max(32, 36 * s);
-        btns.forEach((bd, i) => {
-            const bx = w - (btns.length - i) * (btnW + 4) - 4;
-            const by = barY + barH / 2 - 4;
-            const btn = this.add.rectangle(bx + btnW / 2, by, btnW, btnH, 0x2c3e50)
-                .setInteractive({ useHandCursor: true }).setStrokeStyle(1, 0x3498db);
-            const txt = this.add.text(bx + btnW / 2, by, bd.label, {
-                fontSize: `${Math.max(14, 16 * s)}px`, fontFamily: 'monospace', color: '#fff'
-            }).setOrigin(0.5);
-            btn.on('pointerover', () => txt.setColor('#00d4ff'));
-            btn.on('pointerout', () => txt.setColor('#fff'));
-            btn.on('pointerdown', () => { this.audio.playSFX('click'); bd.act(); });
-        });
+    // --- PLAYER ---
+    _createPlayer(mapData, T) {
+        const sx = mapData.spawnX * T + T / 2;
+        const sy = mapData.spawnY * T + T / 2;
 
-        // Save button
-        const saveBtn = this.add.text(w - 34, barY + barH - 20, '存檔', {
-            fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color: '#666'
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-        saveBtn.on('pointerdown', () => this._quickSave());
+        this.playerSprite = this.physics.add.sprite(sx, sy, 'player-sheet', 1)
+            .setScale(1.5).setDepth(10);
+        this.playerSprite.body.setSize(14, 14);
+        this.playerSprite.body.setOffset(5, 18);
+        this.playerSprite.setCollideWorldBounds(true);
 
-        this.travelContainer = null;
+        this.physics.add.collider(this.playerSprite, this.wallGroup);
+
+        // Name tag above player
+        this.playerNameTag = this.add.text(sx, sy - 24, this.player.name, {
+            fontSize: '12px', fontFamily: 'monospace', color: '#00d4ff',
+            backgroundColor: '#00000088', padding: { x: 3, y: 1 }
+        }).setOrigin(0.5).setDepth(11);
+    }
+
+    // --- MOVEMENT ---
+    _handleMovement() {
+        let vx = 0, vy = 0;
+
+        // Keyboard
+        if (this.cursors.left.isDown || this.wasd.A.isDown) vx = -1;
+        else if (this.cursors.right.isDown || this.wasd.D.isDown) vx = 1;
+        if (this.cursors.up.isDown || this.wasd.W.isDown) vy = -1;
+        else if (this.cursors.down.isDown || this.wasd.S.isDown) vy = 1;
+
+        // Joystick
+        const jd = this.joystick.getDirection();
+        if (Math.abs(jd.x) > 0.15 || Math.abs(jd.y) > 0.15) {
+            vx = jd.x; vy = jd.y;
+        }
+
+        // Normalize + apply speed
+        const mag = Math.sqrt(vx * vx + vy * vy);
+        if (mag > 0) {
+            vx = (vx / mag) * this.SPEED;
+            vy = (vy / mag) * this.SPEED;
+            // Animation
+            if (Math.abs(vy) > Math.abs(vx)) {
+                this.playerSprite.play(vy < 0 ? 'walk-up' : 'walk-down', true);
+            } else {
+                this.playerSprite.play(vx < 0 ? 'walk-left' : 'walk-right', true);
+            }
+        } else {
+            this.playerSprite.stop();
+        }
+
+        this.playerSprite.setVelocity(vx, vy);
+
+        // Update name tag position
+        this.playerNameTag.setPosition(this.playerSprite.x, this.playerSprite.y - 28);
+    }
+
+    // --- PROXIMITY ---
+    _checkProximity() {
+        const px = this.playerSprite.x;
+        const py = this.playerSprite.y;
+        const threshold = this.TILE * 2.5;
+        let nearest = null;
+        let nearDist = Infinity;
+
+        for (const zone of this.interactables) {
+            const dist = Phaser.Math.Distance.Between(px, py, zone.x, zone.y);
+            if (dist < threshold && dist < nearDist) {
+                nearest = zone;
+                nearDist = dist;
+            }
+        }
+
+        if (nearest) {
+            this.currentInteractable = nearest;
+            this.interactPrompt.setText(`按 A 互動: ${nearest.name}`);
+            this.interactPrompt.setVisible(true);
+        } else {
+            this.currentInteractable = null;
+            this.interactPrompt.setVisible(false);
+        }
+    }
+
+    // --- INTERACT ---
+    _interact() {
+        if (!this.currentInteractable) return;
+        this.audio.playSFX('click');
+        if (this.currentInteractable.type === 'building') {
+            this._onBuildingClick(this.currentInteractable.data);
+        } else if (this.currentInteractable.type === 'portal') {
+            this._onPortalClick(this.currentInteractable.data);
+        }
     }
 
     _onBuildingClick(building) {
@@ -162,12 +321,11 @@ export class CityScene extends Phaser.Scene {
     _visitInn() {
         this.player.fullRestore();
         this.audio.playSFX('heal');
-        const w = this.cameras.main.width;
-        const h = this.cameras.main.height;
+        const w = this.cameras.main.width, h = this.cameras.main.height;
         const msg = this.add.text(w / 2, h / 2, 'HP 和 MP 已完全回復！', {
             fontSize: '22px', fontFamily: 'monospace', color: '#2ecc71',
             backgroundColor: '#000000cc', padding: { x: 14, y: 8 }
-        }).setOrigin(0.5);
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(2000);
         this.tweens.add({ targets: msg, alpha: 0, y: h / 2 - 30, duration: 2000, onComplete: () => msg.destroy() });
         this._quickSave();
     }
@@ -179,7 +337,7 @@ export class CityScene extends Phaser.Scene {
             const msg = this.add.text(w / 2, h / 2, `等級不足！需要 LV.${portal.minLevel}+`, {
                 fontSize: '20px', fontFamily: 'monospace', color: '#e74c3c',
                 backgroundColor: '#000000cc', padding: { x: 14, y: 8 }
-            }).setOrigin(0.5);
+            }).setOrigin(0.5).setScrollFactor(0).setDepth(2000);
             this.tweens.add({ targets: msg, alpha: 0, duration: 2000, onComplete: () => msg.destroy() });
             return;
         }
@@ -189,14 +347,129 @@ export class CityScene extends Phaser.Scene {
         this.scene.start('Dungeon', { city: this.cityKey, rank: portal.rank, hasBoss: isBossRank && bossNotDefeated });
     }
 
+    // --- HUD ---
+    _createHUD(camW, camH) {
+        const s = Math.min(camW / 800, camH / 600);
+        const fs = Math.max(14, 16 * s);
+
+        // City name (top center)
+        this.add.text(camW / 2, 8, this.city.name, {
+            fontSize: `${Math.max(20, 26 * s)}px`, fontFamily: 'monospace',
+            color: this.city.color, fontStyle: 'bold'
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(999);
+
+        // Player stats (top left)
+        this.hudName = this.add.text(8, 6, `${this.player.name} LV.${this.player.level}`, {
+            fontSize: `${Math.max(14, 16 * s)}px`, fontFamily: 'monospace', color: '#00d4ff',
+            backgroundColor: '#00000088', padding: { x: 4, y: 2 }
+        }).setScrollFactor(0).setDepth(999);
+
+        // HP bar
+        const barX = 8, barY = 28;
+        const barW = Math.min(160, camW * 0.3);
+        this.add.rectangle(barX + barW / 2, barY + 6, barW, 10, 0x333333)
+            .setScrollFactor(0).setDepth(998);
+        this.hpBar = this.add.rectangle(barX, barY + 6, barW, 10, 0x2ecc71)
+            .setOrigin(0, 0.5).setScrollFactor(0).setDepth(999);
+        this.hpText = this.add.text(barX + 2, barY + 1, '', {
+            fontSize: '10px', fontFamily: 'monospace', color: '#fff'
+        }).setScrollFactor(0).setDepth(1000);
+        this._hpBarW = barW;
+
+        // MP bar
+        this.add.rectangle(barX + barW / 2, barY + 20, barW, 10, 0x333333)
+            .setScrollFactor(0).setDepth(998);
+        this.mpBar = this.add.rectangle(barX, barY + 20, barW, 10, 0x3498db)
+            .setOrigin(0, 0.5).setScrollFactor(0).setDepth(999);
+        this.mpText = this.add.text(barX + 2, barY + 15, '', {
+            fontSize: '10px', fontFamily: 'monospace', color: '#fff'
+        }).setScrollFactor(0).setDepth(1000);
+
+        // Gold display
+        this.goldText = this.add.text(8, barY + 32, '', {
+            fontSize: `${Math.max(12, 14 * s)}px`, fontFamily: 'monospace', color: '#f1c40f',
+            backgroundColor: '#00000088', padding: { x: 3, y: 1 }
+        }).setScrollFactor(0).setDepth(999);
+
+        // Menu buttons (top right)
+        const btns = [
+            { label: '☰', act: () => this._showQuickMenu() },
+        ];
+        btns.forEach((bd, i) => {
+            const bx = camW - 40 - i * 42;
+            const btn = this.add.rectangle(bx, 20, 34, 28, 0x2c3e50, 0.7)
+                .setStrokeStyle(1, 0x3498db).setScrollFactor(0).setDepth(999)
+                .setInteractive({ useHandCursor: true });
+            this.add.text(bx, 20, bd.label, {
+                fontSize: '18px', fontFamily: 'monospace', color: '#fff'
+            }).setOrigin(0.5).setScrollFactor(0).setDepth(1000);
+            btn.on('pointerdown', () => { this.audio.playSFX('click'); bd.act(); });
+        });
+
+        this._updateHUD();
+    }
+
+    _updateHUD() {
+        const p = this.player;
+        this.hpBar.width = this._hpBarW * Math.max(0, p.hp / p.maxHp);
+        this.mpBar.width = this._hpBarW * Math.max(0, p.mp / p.maxMp);
+        this.hpText.setText(`HP ${p.hp}/${p.maxHp}`);
+        this.mpText.setText(`MP ${p.mp}/${p.maxMp}`);
+        this.goldText.setText(`金幣:${p.gold} 鑽石:${p.diamonds}`);
+    }
+
+    // --- QUICK MENU ---
+    _showQuickMenu() {
+        if (this.travelContainer) { this.travelContainer.destroy(); this.travelContainer = null; return; }
+        const w = this.cameras.main.width, h = this.cameras.main.height;
+        const s = Math.min(w / 800, h / 600);
+
+        this.travelContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(3000);
+        const boxW = Math.min(320, w * 0.7);
+        const boxH = Math.min(380, h * 0.65);
+        this.travelContainer.add(this.add.rectangle(w / 2, h / 2, boxW, boxH, 0x0a0a1e, 0.96).setStrokeStyle(2, 0x00d4ff));
+
+        this.travelContainer.add(this.add.text(w / 2, h / 2 - boxH / 2 + 18, '選單', {
+            fontSize: `${Math.max(18, 22 * s)}px`, fontFamily: 'monospace', color: '#00d4ff'
+        }).setOrigin(0.5));
+
+        const menuItems = [
+            { label: '背包', act: () => this.scene.start('Menu', { tab: 'inventory', city: this.cityKey }) },
+            { label: '狀態', act: () => this.scene.start('Menu', { tab: 'status', city: this.cityKey }) },
+            { label: '裝備', act: () => this.scene.start('Menu', { tab: 'equipment', city: this.cityKey }) },
+            { label: '技能', act: () => this.scene.start('Menu', { tab: 'skills', city: this.cityKey }) },
+            { label: '任務', act: () => this.scene.start('Menu', { tab: 'quest', city: this.cityKey }) },
+            { label: '移動 (高鐵)', act: () => { this.travelContainer.destroy(); this.travelContainer = null; this._showCityTravel(); } },
+            { label: '存檔', act: () => { this._quickSave(); this.travelContainer.destroy(); this.travelContainer = null; } },
+        ];
+
+        menuItems.forEach((item, i) => {
+            const y = h / 2 - boxH / 2 + 50 + i * 38 * s;
+            const txt = this.add.text(w / 2, y, item.label, {
+                fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#fff'
+            }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+            txt.on('pointerover', () => txt.setColor('#00d4ff'));
+            txt.on('pointerout', () => txt.setColor('#fff'));
+            txt.on('pointerdown', () => { this.audio.playSFX('click'); item.act(); });
+            this.travelContainer.add(txt);
+        });
+
+        const closeBtn = this.add.text(w / 2, h / 2 + boxH / 2 - 22, '關閉', {
+            fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#e74c3c'
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        closeBtn.on('pointerdown', () => { this.travelContainer.destroy(); this.travelContainer = null; });
+        this.travelContainer.add(closeBtn);
+    }
+
+    // --- CITY TRAVEL ---
     _showCityTravel() {
         if (this.travelContainer) { this.travelContainer.destroy(); this.travelContainer = null; return; }
         const w = this.cameras.main.width, h = this.cameras.main.height;
         const s = Math.min(w / 800, h / 600);
 
-        this.travelContainer = this.add.container(0, 0);
+        this.travelContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(3000);
         const boxW = Math.min(420, w * 0.85);
-        const boxH = Math.min(300, h * 0.55);
+        const boxH = Math.min(320, h * 0.55);
         this.travelContainer.add(this.add.rectangle(w / 2, h / 2, boxW, boxH, 0x0a0a1e, 0.96).setStrokeStyle(2, 0x00d4ff));
         this.travelContainer.add(this.add.text(w / 2, h / 2 - boxH / 2 + 16, '高鐵傳送', {
             fontSize: `${Math.max(18, 22 * s)}px`, fontFamily: 'monospace', color: '#00d4ff'
@@ -206,7 +479,7 @@ export class CityScene extends Phaser.Scene {
             const city = CITIES[ck];
             const unlocked = this.player.citiesUnlocked.includes(ck);
             const isCurrent = ck === this.cityKey;
-            const y = h / 2 - boxH / 2 + 48 + i * 38 * s;
+            const y = h / 2 - boxH / 2 + 50 + i * 36 * s;
             const color = isCurrent ? '#7f8c8d' : unlocked ? city.color : '#444';
             const label = `${city.name} (LV.${city.levelRange[0]}-${city.levelRange[1]})${isCurrent ? ' ← 目前' : ''}${!unlocked ? ' 🔒' : ''}`;
             const txt = this.add.text(w / 2, y, label, {
@@ -226,6 +499,7 @@ export class CityScene extends Phaser.Scene {
         this.travelContainer.add(closeBtn);
     }
 
+    // --- SAVE ---
     _quickSave() {
         const slot = this.registry.get('currentSaveSlot') ?? 0;
         SaveSystem.save(slot, this.player.toJSON());
@@ -234,7 +508,7 @@ export class CityScene extends Phaser.Scene {
         const msg = this.add.text(w / 2, h / 2, '存檔成功！', {
             fontSize: '20px', fontFamily: 'monospace', color: '#2ecc71',
             backgroundColor: '#000000cc', padding: { x: 12, y: 6 }
-        }).setOrigin(0.5);
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(2000);
         this.tweens.add({ targets: msg, alpha: 0, duration: 1500, onComplete: () => msg.destroy() });
     }
 }

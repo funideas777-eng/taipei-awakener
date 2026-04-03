@@ -25,6 +25,10 @@ const config = {
         activePointers: 3,
         touch: { capture: true },
     },
+    physics: {
+        default: 'arcade',
+        arcade: { gravity: { y: 0 }, debug: false }
+    },
     dom: { createContainer: false },
     scene: [
         BootScene,

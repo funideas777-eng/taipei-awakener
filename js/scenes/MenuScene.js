@@ -25,16 +25,16 @@ export class MenuScene extends Phaser.Scene {
         // Tabs
         const tabs = ['status', 'inventory', 'equipment', 'skills', 'quest'];
         const tabLabels = ['狀態', '背包', '裝備', '技能', '任務'];
-        const tabW = Math.min(80, (w - 10) / tabs.length - 2);
+        const tabW = Math.min(90, (w - 10) / tabs.length - 2);
 
         tabs.forEach((tab, i) => {
             const x = 5 + i * (tabW + 2) + tabW / 2;
             const isActive = tab === this.activeTab;
-            const btn = this.add.rectangle(x, 16, tabW, 24 * this.s, isActive ? 0x1a1a2e : 0x0a0a1a)
+            const btn = this.add.rectangle(x, 18, tabW, 32 * this.s, isActive ? 0x1a1a2e : 0x0a0a1a)
                 .setStrokeStyle(1, isActive ? 0x00d4ff : 0x333333)
                 .setInteractive({ useHandCursor: true });
-            this.add.text(x, 16, tabLabels[i], {
-                fontSize: `${Math.max(9, 12 * this.s)}px`, fontFamily: 'monospace',
+            this.add.text(x, 18, tabLabels[i], {
+                fontSize: `${Math.max(16, 18 * this.s)}px`, fontFamily: 'monospace',
                 color: isActive ? '#00d4ff' : '#7f8c8d',
             }).setOrigin(0.5);
             btn.on('pointerdown', () => {
@@ -43,7 +43,7 @@ export class MenuScene extends Phaser.Scene {
             });
         });
 
-        this.contentY = 38;
+        this.contentY = 42;
         this.contentW = w - 16;
 
         switch (this.activeTab) {
@@ -55,8 +55,8 @@ export class MenuScene extends Phaser.Scene {
         }
 
         // Back
-        this.add.text(w / 2, h - 16, '← 返回城市', {
-            fontSize: `${Math.max(11, 13 * this.s)}px`, fontFamily: 'monospace', color: '#e74c3c'
+        this.add.text(w / 2, h - 20, '← 返回城市', {
+            fontSize: `${Math.max(18, 20 * this.s)}px`, fontFamily: 'monospace', color: '#e74c3c'
         }).setOrigin(0.5).setInteractive({ useHandCursor: true })
             .on('pointerdown', () => this.scene.start('City', { city: this.cityKey }));
     }
@@ -65,10 +65,10 @@ export class MenuScene extends Phaser.Scene {
         const p = this.player;
         const s = this.s;
         const y = this.contentY;
-        const fs = Math.max(10, Math.floor(13 * s));
+        const fs = Math.max(16, Math.floor(18 * s));
 
         this.add.text(10, y, p.name, {
-            fontSize: `${Math.max(20, 24 * s)}px`, fontFamily: 'monospace', color: '#00d4ff', fontStyle: 'bold'
+            fontSize: `${Math.max(22, 28 * s)}px`, fontFamily: 'monospace', color: '#00d4ff', fontStyle: 'bold'
         });
 
         const lines = [
@@ -80,7 +80,7 @@ export class MenuScene extends Phaser.Scene {
             `淨化城市: ${p.bossesDefeated.length}/6`,
         ];
         lines.forEach((line, i) => {
-            this.add.text(10, y + 28 + i * (fs + 8), line, {
+            this.add.text(10, y + 32 + i * (fs + 12), line, {
                 fontSize: `${fs}px`, fontFamily: 'monospace', color: '#bdc3c7',
                 wordWrap: { width: this.contentW }
             });
@@ -90,8 +90,8 @@ export class MenuScene extends Phaser.Scene {
     _showInventory() {
         const items = this.player.inventory;
         const s = this.s;
-        const fs = Math.max(10, Math.floor(12 * s));
-        const rowH = Math.max(26, 32 * s);
+        const fs = Math.max(16, Math.floor(18 * s));
+        const rowH = Math.max(36, 42 * s);
         const w = this.cameras.main.width;
 
         if (items.length === 0) {

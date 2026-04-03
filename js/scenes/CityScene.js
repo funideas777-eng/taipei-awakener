@@ -72,9 +72,9 @@ export class CityScene extends Phaser.Scene {
             const by = offsetY + b.y * tileSize + tileSize / 2;
             const sprite = this.add.image(bx, by, `building-${b.type}`)
                 .setScale(bldgScale).setInteractive({ useHandCursor: true });
-            this.add.text(bx, by + tileSize / 2 + 2, b.name, {
-                fontSize: `${Math.max(12, 14 * s)}px`, fontFamily: 'monospace', color: '#fff',
-                backgroundColor: '#000000aa', padding: { x: 3, y: 1 }
+            this.add.text(bx, by + tileSize / 2 + 3, b.name, {
+                fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color: '#fff',
+                backgroundColor: '#000000cc', padding: { x: 4, y: 2 }
             }).setOrigin(0.5);
             sprite.on('pointerdown', () => { this.audio.playSFX('click'); this._onBuildingClick(b); });
         });
@@ -91,9 +91,9 @@ export class CityScene extends Phaser.Scene {
                 scaleY: { from: bldgScale * 0.9, to: bldgScale * 1.1 },
                 duration: 1000, yoyo: true, repeat: -1,
             });
-            this.add.text(px, py + tileSize / 2 + 2, `${p.rank}級 LV${p.minLevel}+`, {
-                fontSize: `${Math.max(11, 13 * s)}px`, fontFamily: 'monospace', color: PORTAL_RANKS[p.rank].color,
-                backgroundColor: '#000000aa', padding: { x: 3, y: 1 }
+            this.add.text(px, py + tileSize / 2 + 3, `${p.rank}級 LV${p.minLevel}+`, {
+                fontSize: `${Math.max(14, 16 * s)}px`, fontFamily: 'monospace', color: PORTAL_RANKS[p.rank].color,
+                backgroundColor: '#000000cc', padding: { x: 4, y: 2 }
             }).setOrigin(0.5);
             portal.on('pointerdown', () => { this.audio.playSFX('portal'); this._onPortalClick(p); });
         });
@@ -139,8 +139,8 @@ export class CityScene extends Phaser.Scene {
         });
 
         // Save button
-        const saveBtn = this.add.text(w - 30, barY + barH - 18, '存檔', {
-            fontSize: `${Math.max(12, 14 * s)}px`, fontFamily: 'monospace', color: '#555'
+        const saveBtn = this.add.text(w - 34, barY + barH - 20, '存檔', {
+            fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color: '#666'
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
         saveBtn.on('pointerdown', () => this._quickSave());
 
@@ -219,8 +219,8 @@ export class CityScene extends Phaser.Scene {
             this.travelContainer.add(txt);
         });
 
-        const closeBtn = this.add.text(w / 2, h / 2 + boxH / 2 - 16, '取消', {
-            fontSize: `${12 * s}px`, fontFamily: 'monospace', color: '#e74c3c'
+        const closeBtn = this.add.text(w / 2, h / 2 + boxH / 2 - 20, '取消', {
+            fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#e74c3c'
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
         closeBtn.on('pointerdown', () => { this.travelContainer.destroy(); this.travelContainer = null; });
         this.travelContainer.add(closeBtn);

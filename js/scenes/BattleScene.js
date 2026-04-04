@@ -546,6 +546,10 @@ export class BattleScene extends Phaser.Scene {
                     backgroundColor: '#2c3e50', padding: { x: 20, y: 6 }
                 }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(101);
                 contBtn.on('pointerdown', () => {
+                    // Prevent re-entry: destroy button immediately
+                    contBtn.disableInteractive();
+                    contBtn.destroy();
+
                     // City unlock for boss defeats
                     const hasBoss = this.monstersData.some(m => m.isBoss && !m.isFinalBoss);
                     if (hasBoss) {
@@ -615,17 +619,22 @@ export class BattleScene extends Phaser.Scene {
     }
 
     _promptNameThenDo(callback) {
+        // Re-entry guard
+        if (this._namePromptActive) return;
+        this._namePromptActive = true;
+
         const modal = document.getElementById('name-modal');
         const input = document.getElementById('player-name-input');
         const submitBtn = document.getElementById('name-submit-btn');
         const skipBtn = document.getElementById('name-skip-btn');
 
         if (!modal || !input) {
+            this._namePromptActive = false;
             callback();
             return;
         }
 
-        // Disable Phaser input so HTML modal can receive clicks/touches
+        // Disable ALL Phaser input so HTML modal can receive clicks/touches
         this.input.enabled = false;
         const canvas = this.game.canvas;
         if (canvas) canvas.style.pointerEvents = 'none';
@@ -634,15 +643,12 @@ export class BattleScene extends Phaser.Scene {
         const savedName = SaveSystem.getSavedPlayerName();
         input.value = savedName;
         modal.style.display = 'flex';
+        setTimeout(() => input.focus(), 150);
 
-        // Delay focus to ensure modal is visible
-        setTimeout(() => input.focus(), 100);
+        let submitted = false; // prevent double-fire from click+touchend
 
         const cleanup = () => {
             modal.style.display = 'none';
-            // Restore Phaser input
-            this.input.enabled = true;
-            if (canvas) canvas.style.pointerEvents = 'auto';
             submitBtn.removeEventListener('click', onSubmit);
             skipBtn.removeEventListener('click', onSkip);
             submitBtn.removeEventListener('touchend', onSubmit);
@@ -650,8 +656,22 @@ export class BattleScene extends Phaser.Scene {
             input.removeEventListener('keydown', onEnter);
         };
 
+        const finish = (cb) => {
+            cleanup();
+            // Delay restoring Phaser input so touch event doesn't bleed through
+            setTimeout(() => {
+                if (canvas) canvas.style.pointerEvents = 'auto';
+                this.input.enabled = true;
+                this._namePromptActive = false;
+                cb();
+            }, 200);
+        };
+
         const onSubmit = (e) => {
-            if (e) e.preventDefault();
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            if (submitted) return;
+            submitted = true;
+
             const name = (input.value || '').trim().substring(0, 12) || '匿名覺醒者';
             SaveSystem.savePlayerName(name);
             this.player.name = name;
@@ -660,23 +680,24 @@ export class BattleScene extends Phaser.Scene {
             SaveSystem.pushGlobal(name, this.player.level, citiesCleared);
             SaveSystem.addLeaderboardEntry(this.player);
 
-            cleanup();
-            callback();
+            finish(callback);
         };
 
         const onSkip = (e) => {
-            if (e) e.preventDefault();
+            if (e) { e.preventDefault(); e.stopPropagation(); }
+            if (submitted) return;
+            submitted = true;
+
             const citiesCleared = (this.player.bossesDefeated || []).length;
             SaveSystem.addLeaderboardEntry(this.player);
-            cleanup();
-            callback();
+
+            finish(callback);
         };
 
         const onEnter = (e) => {
             if (e.key === 'Enter') onSubmit(e);
         };
 
-        // Support both click (desktop) and touchend (mobile)
         submitBtn.addEventListener('click', onSubmit);
         skipBtn.addEventListener('click', onSkip);
         submitBtn.addEventListener('touchend', onSubmit);

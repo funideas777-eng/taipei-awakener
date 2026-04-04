@@ -16,15 +16,15 @@
 <body>
     <div id="game-container"></div>
     <!-- Name Input Modal for Leaderboard -->
-    <div id="name-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:9999; justify-content:center; align-items:center;">
-        <div style="background:#0a0a1e; border:2px solid #00d4ff; border-radius:12px; padding:24px; max-width:360px; width:90%; text-align:center; font-family:monospace;">
+    <div id="name-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:99999; justify-content:center; align-items:center; touch-action:auto;">
+        <div style="background:#0a0a1e; border:2px solid #00d4ff; border-radius:12px; padding:24px; max-width:360px; width:90%; text-align:center; font-family:monospace; position:relative; z-index:100000;">
             <div style="color:#f1c40f; font-size:18px; margin-bottom:8px;">🏆 恭喜過關！</div>
             <div style="color:#ccc; font-size:14px; margin-bottom:16px;">輸入你的名字登錄全球排行榜</div>
             <input id="player-name-input" type="text" maxlength="12" placeholder="輸入名字（最多12字）"
-                style="width:100%; padding:10px; font-size:16px; font-family:monospace; background:#1a1a2e; color:#fff; border:1px solid #3498db; border-radius:6px; text-align:center; box-sizing:border-box; outline:none;">
+                style="width:100%; padding:12px; font-size:18px; font-family:monospace; background:#1a1a2e; color:#fff; border:2px solid #3498db; border-radius:6px; text-align:center; box-sizing:border-box; outline:none; touch-action:manipulation; -webkit-appearance:none;">
             <div style="margin-top:16px; display:flex; gap:10px; justify-content:center;">
-                <button id="name-submit-btn" style="padding:8px 24px; font-size:15px; font-family:monospace; background:#1a3a1a; color:#2ecc71; border:1px solid #2ecc71; border-radius:6px; cursor:pointer;">提交</button>
-                <button id="name-skip-btn" style="padding:8px 24px; font-size:15px; font-family:monospace; background:#2c1a1a; color:#e74c3c; border:1px solid #553333; border-radius:6px; cursor:pointer;">跳過</button>
+                <button id="name-submit-btn" style="padding:12px 28px; font-size:17px; font-family:monospace; background:#1a3a1a; color:#2ecc71; border:2px solid #2ecc71; border-radius:6px; cursor:pointer; touch-action:manipulation; -webkit-appearance:none;">提交</button>
+                <button id="name-skip-btn" style="padding:12px 28px; font-size:17px; font-family:monospace; background:#2c1a1a; color:#e74c3c; border:2px solid #553333; border-radius:6px; cursor:pointer; touch-action:manipulation; -webkit-appearance:none;">跳過</button>
             </div>
         </div>
     </div>

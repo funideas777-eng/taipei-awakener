@@ -621,25 +621,37 @@ export class BattleScene extends Phaser.Scene {
         const skipBtn = document.getElementById('name-skip-btn');
 
         if (!modal || !input) {
-            // Fallback: if modal elements missing, just proceed
             callback();
             return;
         }
+
+        // Disable Phaser input so HTML modal can receive clicks/touches
+        this.input.enabled = false;
+        const canvas = this.game.canvas;
+        if (canvas) canvas.style.pointerEvents = 'none';
 
         // Pre-fill saved name
         const savedName = SaveSystem.getSavedPlayerName();
         input.value = savedName;
         modal.style.display = 'flex';
-        input.focus();
+
+        // Delay focus to ensure modal is visible
+        setTimeout(() => input.focus(), 100);
 
         const cleanup = () => {
             modal.style.display = 'none';
+            // Restore Phaser input
+            this.input.enabled = true;
+            if (canvas) canvas.style.pointerEvents = 'auto';
             submitBtn.removeEventListener('click', onSubmit);
             skipBtn.removeEventListener('click', onSkip);
+            submitBtn.removeEventListener('touchend', onSubmit);
+            skipBtn.removeEventListener('touchend', onSkip);
             input.removeEventListener('keydown', onEnter);
         };
 
-        const onSubmit = () => {
+        const onSubmit = (e) => {
+            if (e) e.preventDefault();
             const name = (input.value || '').trim().substring(0, 12) || '匿名覺醒者';
             SaveSystem.savePlayerName(name);
             this.player.name = name;
@@ -652,8 +664,8 @@ export class BattleScene extends Phaser.Scene {
             callback();
         };
 
-        const onSkip = () => {
-            // Still submit with default name if available
+        const onSkip = (e) => {
+            if (e) e.preventDefault();
             const citiesCleared = (this.player.bossesDefeated || []).length;
             SaveSystem.addLeaderboardEntry(this.player);
             cleanup();
@@ -661,11 +673,14 @@ export class BattleScene extends Phaser.Scene {
         };
 
         const onEnter = (e) => {
-            if (e.key === 'Enter') onSubmit();
+            if (e.key === 'Enter') onSubmit(e);
         };
 
+        // Support both click (desktop) and touchend (mobile)
         submitBtn.addEventListener('click', onSubmit);
         skipBtn.addEventListener('click', onSkip);
+        submitBtn.addEventListener('touchend', onSubmit);
+        skipBtn.addEventListener('touchend', onSkip);
         input.addEventListener('keydown', onEnter);
     }
 

@@ -170,62 +170,129 @@ export class TitleScene extends Phaser.Scene {
         const w = this.cameras.main.width;
         const h = this.cameras.main.height;
         const s = Math.min(w / 800, h / 600);
-        const boxW = Math.min(500, w * 0.85);
-        const boxH = Math.min(400, h * 0.68);
-        const fs = Math.max(14, 16 * s);
+
+        // Adaptive box sizing
+        const boxW = Math.min(480, w * 0.88);
+        const boxH = Math.min(420, h * 0.75);
+        const boxX = w / 2;
+        const boxY = h / 2;
+        const padX = boxX - boxW / 2 + 18;  // left padding inside box
+        const innerW = boxW - 36;            // usable text width
+
+        // Adaptive font size based on box width
+        const titleFs = Math.max(18, Math.min(24, boxW / 18));
+        const tabFs = Math.max(12, Math.min(16, boxW / 28));
+        const rowFs = Math.max(11, Math.min(15, boxW / 32));
+        const closeFs = Math.max(14, Math.min(18, boxW / 24));
 
         this.leaderboardContainer = this.add.container(0, 0);
-        this.leaderboardContainer.add(this.add.rectangle(w / 2, h / 2, boxW, boxH, 0x0a0a1e, 0.96).setStrokeStyle(2, 0xf1c40f));
-        this.leaderboardContainer.add(this.add.text(w / 2, h / 2 - boxH / 2 + 20 * s, '排 行 榜', {
-            fontSize: `${Math.max(20, 24 * s)}px`, fontFamily: 'monospace', color: '#f1c40f'
+
+        // Background box
+        this.leaderboardContainer.add(
+            this.add.rectangle(boxX, boxY, boxW, boxH, 0x0a0a1e, 0.96).setStrokeStyle(2, 0xf1c40f)
+        );
+
+        // Title
+        const titleY = boxY - boxH / 2 + 22;
+        this.leaderboardContainer.add(this.add.text(boxX, titleY, '排 行 榜', {
+            fontSize: `${titleFs}px`, fontFamily: 'monospace', color: '#f1c40f', fontStyle: 'bold'
         }).setOrigin(0.5));
 
         // Tab buttons
-        const tabY = h / 2 - boxH / 2 + 55 * s;
-        const tabW = 90 * s;
-        const tabH = 28 * s;
-        const localColor = this._lbTab === 'local' ? 0x3498db : 0x2c3e50;
-        const globalColor = this._lbTab === 'global' ? 0x3498db : 0x2c3e50;
-        const localTextColor = this._lbTab === 'local' ? '#fff' : '#888';
-        const globalTextColor = this._lbTab === 'global' ? '#fff' : '#888';
+        const tabY = titleY + 32;
+        const tabW = Math.min(80, boxW * 0.18);
+        const tabH = Math.min(28, boxH * 0.065);
+        const tabGap = tabW + 12;
 
-        const localTab = this.add.rectangle(w / 2 - 55 * s, tabY, tabW, tabH, localColor)
-            .setStrokeStyle(1, 0x3498db).setInteractive({ useHandCursor: true });
+        const localActive = this._lbTab === 'local';
+        const globalActive = this._lbTab === 'global';
+
+        const localTab = this.add.rectangle(boxX - tabGap / 2, tabY, tabW, tabH,
+            localActive ? 0x3498db : 0x2c3e50).setStrokeStyle(1, 0x3498db).setInteractive({ useHandCursor: true });
         this.leaderboardContainer.add(localTab);
-        this.leaderboardContainer.add(this.add.text(w / 2 - 55 * s, tabY, '本機', {
-            fontSize: `${Math.max(13, 15 * s)}px`, fontFamily: 'monospace', color: localTextColor
+        this.leaderboardContainer.add(this.add.text(boxX - tabGap / 2, tabY, '本機', {
+            fontSize: `${tabFs}px`, fontFamily: 'monospace', color: localActive ? '#fff' : '#888'
         }).setOrigin(0.5));
         localTab.on('pointerdown', () => { this._lbTab = 'local'; this._buildLeaderboardUI(); });
 
-        const globalTab = this.add.rectangle(w / 2 + 55 * s, tabY, tabW, tabH, globalColor)
-            .setStrokeStyle(1, 0x3498db).setInteractive({ useHandCursor: true });
+        const globalTab = this.add.rectangle(boxX + tabGap / 2, tabY, tabW, tabH,
+            globalActive ? 0x3498db : 0x2c3e50).setStrokeStyle(1, 0x3498db).setInteractive({ useHandCursor: true });
         this.leaderboardContainer.add(globalTab);
-        this.leaderboardContainer.add(this.add.text(w / 2 + 55 * s, tabY, '全球', {
-            fontSize: `${Math.max(13, 15 * s)}px`, fontFamily: 'monospace', color: globalTextColor
+        this.leaderboardContainer.add(this.add.text(boxX + tabGap / 2, tabY, '全球', {
+            fontSize: `${tabFs}px`, fontFamily: 'monospace', color: globalActive ? '#fff' : '#888'
         }).setOrigin(0.5));
         globalTab.on('pointerdown', () => { this._lbTab = 'global'; this._buildLeaderboardUI(); });
 
-        const listStartY = h / 2 - boxH / 2 + 85 * s;
+        // List area
+        const listTop = tabY + tabH / 2 + 12;
+        const closeY = boxY + boxH / 2 - 22;
+        const listAreaH = closeY - listTop - 10;
+        const maxRows = Math.min(8, Math.floor(listAreaH / (rowFs + 10)));
+        const rowH = listAreaH / Math.max(maxRows, 1);
+
+        // Column header
+        this.leaderboardContainer.add(this.add.text(padX, listTop - 2, '排名', {
+            fontSize: `${rowFs}px`, fontFamily: 'monospace', color: '#7f8c8d'
+        }));
+        this.leaderboardContainer.add(this.add.text(padX + innerW * 0.18, listTop - 2, '名稱', {
+            fontSize: `${rowFs}px`, fontFamily: 'monospace', color: '#7f8c8d'
+        }));
+        this.leaderboardContainer.add(this.add.text(padX + innerW * 0.62, listTop - 2, '等級', {
+            fontSize: `${rowFs}px`, fontFamily: 'monospace', color: '#7f8c8d'
+        }));
+        this.leaderboardContainer.add(this.add.text(padX + innerW * 0.82, listTop - 2, '城市', {
+            fontSize: `${rowFs}px`, fontFamily: 'monospace', color: '#7f8c8d'
+        }));
+
+        // Separator line
+        const sepY = listTop + rowFs + 4;
+        this.leaderboardContainer.add(
+            this.add.rectangle(boxX, sepY, innerW, 1, 0x3498db, 0.4)
+        );
+
+        const dataStartY = sepY + 6;
+
+        const renderRow = (i, name, level, cities, y) => {
+            const rankColor = i === 0 ? '#f1c40f' : i === 1 ? '#bdc3c7' : i === 2 ? '#cd7f32' : '#ddd';
+            const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`;
+
+            // Rank
+            this.leaderboardContainer.add(this.add.text(padX, y, medal, {
+                fontSize: `${rowFs}px`, fontFamily: 'monospace', color: rankColor
+            }));
+
+            // Name — truncate to fit
+            const displayName = String(name).substring(0, 8);
+            this.leaderboardContainer.add(this.add.text(padX + innerW * 0.18, y, displayName, {
+                fontSize: `${rowFs}px`, fontFamily: 'monospace', color: rankColor
+            }));
+
+            // Level
+            this.leaderboardContainer.add(this.add.text(padX + innerW * 0.62, y, `LV.${level}`, {
+                fontSize: `${rowFs}px`, fontFamily: 'monospace', color: rankColor
+            }));
+
+            // Cities
+            this.leaderboardContainer.add(this.add.text(padX + innerW * 0.82, y, `${cities}/6`, {
+                fontSize: `${rowFs}px`, fontFamily: 'monospace', color: rankColor
+            }));
+        };
 
         if (this._lbTab === 'local') {
             const board = SaveSystem.getLeaderboard();
-            board.slice(0, 8).forEach((entry, i) => {
-                const y = listStartY + i * 28 * s;
-                const rankColor = i === 0 ? '#f1c40f' : i === 1 ? '#bdc3c7' : i === 2 ? '#cd7f32' : '#fff';
-                this.leaderboardContainer.add(this.add.text(w / 2 - 160 * s, y,
-                    `#${i + 1}  ${entry.name.padEnd(10)} LV.${String(entry.level).padStart(2)}  ${entry.citiesCleared}/6`,
-                    { fontSize: `${fs}px`, fontFamily: 'monospace', color: rankColor }
-                ));
+            const shown = board.slice(0, maxRows);
+            shown.forEach((entry, i) => {
+                renderRow(i, entry.name, entry.level, entry.citiesCleared, dataStartY + i * rowH);
             });
             if (board.length === 0) {
-                this.leaderboardContainer.add(this.add.text(w / 2, listStartY + 60 * s, '暫無記錄', {
-                    fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#666'
+                this.leaderboardContainer.add(this.add.text(boxX, dataStartY + listAreaH * 0.3, '暫無記錄', {
+                    fontSize: `${closeFs}px`, fontFamily: 'monospace', color: '#666'
                 }).setOrigin(0.5));
             }
         } else {
-            // Global tab — show loading then fetch
-            const loadingText = this.add.text(w / 2, listStartY + 60 * s, '載入中...', {
-                fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#888'
+            // Global tab
+            const loadingText = this.add.text(boxX, dataStartY + listAreaH * 0.3, '載入中...', {
+                fontSize: `${closeFs}px`, fontFamily: 'monospace', color: '#888'
             }).setOrigin(0.5);
             this.leaderboardContainer.add(loadingText);
 
@@ -234,20 +301,14 @@ export class TitleScene extends Phaser.Scene {
                 loadingText.destroy();
 
                 if (data && data.length > 0) {
-                    data.slice(0, 10).forEach((entry, i) => {
-                        const y = listStartY + i * 28 * s;
-                        const rankColor = i === 0 ? '#f1c40f' : i === 1 ? '#bdc3c7' : i === 2 ? '#cd7f32' : '#fff';
+                    data.slice(0, maxRows).forEach((entry, i) => {
                         const lvl = entry.level || Math.floor((entry.score || 0) / 100);
                         const cities = entry.citiesCleared || Math.floor(((entry.score || 0) % 100) / 10);
-                        const txt = this.add.text(w / 2 - 160 * s, y,
-                            `#${i + 1}  ${String(entry.name).padEnd(10)} LV.${String(lvl).padStart(2)}  ${cities}/6`,
-                            { fontSize: `${fs}px`, fontFamily: 'monospace', color: rankColor }
-                        );
-                        if (this.leaderboardContainer) this.leaderboardContainer.add(txt);
+                        renderRow(i, entry.name, lvl, cities, dataStartY + i * rowH);
                     });
                 } else {
-                    const noData = this.add.text(w / 2, listStartY + 60 * s, '暫無全球記錄', {
-                        fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#666'
+                    const noData = this.add.text(boxX, dataStartY + listAreaH * 0.3, '暫無全球記錄', {
+                        fontSize: `${closeFs}px`, fontFamily: 'monospace', color: '#666'
                     }).setOrigin(0.5);
                     if (this.leaderboardContainer) this.leaderboardContainer.add(noData);
                 }
@@ -255,10 +316,10 @@ export class TitleScene extends Phaser.Scene {
         }
 
         // Close button
-        const closeBtn2 = this.add.text(w / 2, h / 2 + boxH / 2 - 25 * s, '返回', {
-            fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#e74c3c'
+        const closeBtn = this.add.text(boxX, closeY, '返回', {
+            fontSize: `${closeFs}px`, fontFamily: 'monospace', color: '#e74c3c'
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-        closeBtn2.on('pointerdown', () => { this.leaderboardContainer.destroy(); this.leaderboardContainer = null; });
-        this.leaderboardContainer.add(closeBtn2);
+        closeBtn.on('pointerdown', () => { this.leaderboardContainer.destroy(); this.leaderboardContainer = null; });
+        this.leaderboardContainer.add(closeBtn);
     }
 }

@@ -26,6 +26,9 @@ export class CityScene extends Phaser.Scene {
         this.TILE = TILE;
         this.SPEED = 160;
 
+        // UI overlay objects (managed without container to avoid scrollFactor input bugs)
+        this._uiOverlay = [];
+
         // Generate map
         const mapData = MapGenerator.generateCityMap(this.city);
         this.mapData = mapData;
@@ -89,11 +92,10 @@ export class CityScene extends Phaser.Scene {
         }).setOrigin(0.5).setScrollFactor(0).setDepth(999).setVisible(false);
 
         this.currentInteractable = null;
-        this.travelContainer = null;
     }
 
     update() {
-        if (this.travelContainer) {
+        if (this._uiOverlay && this._uiOverlay.length > 0) {
             this.playerSprite.setVelocity(0, 0);
             this.playerSprite.stop();
             return;
@@ -315,6 +317,7 @@ export class CityScene extends Phaser.Scene {
             case 'inn': this._visitInn(); break;
             case 'guild': this.scene.start('Menu', { tab: 'quest', city: this.cityKey }); break;
             case 'diamond': this.scene.start('Shop', { city: this.cityKey, shopType: 'diamond', title: '鑽石商城' }); break;
+            case 'hsr': this._showCityTravel(); break;
         }
     }
 
@@ -418,85 +421,145 @@ export class CityScene extends Phaser.Scene {
         this.goldText.setText(`金幣:${p.gold} 鑽石:${p.diamonds}`);
     }
 
-    // --- QUICK MENU ---
+    // --- QUICK MENU (fixed: no container, individual scrollFactor(0) objects) ---
     _showQuickMenu() {
-        if (this.travelContainer) { this.travelContainer.destroy(); this.travelContainer = null; return; }
+        if (this._uiOverlay.length > 0) { this._clearOverlay(); return; }
         const w = this.cameras.main.width, h = this.cameras.main.height;
         const s = Math.min(w / 800, h / 600);
 
-        this.travelContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(3000);
         const boxW = Math.min(320, w * 0.7);
-        const boxH = Math.min(380, h * 0.65);
-        this.travelContainer.add(this.add.rectangle(w / 2, h / 2, boxW, boxH, 0x0a0a1e, 0.96).setStrokeStyle(2, 0x00d4ff));
+        const boxH = Math.min(420, h * 0.72);
 
-        this.travelContainer.add(this.add.text(w / 2, h / 2 - boxH / 2 + 18, '選單', {
+        // Fullscreen blocker to prevent clicks passing through
+        const blocker = this.add.rectangle(w / 2, h / 2, w, h, 0x000000, 0.4)
+            .setScrollFactor(0).setDepth(2999).setInteractive();
+        blocker.on('pointerdown', () => this._clearOverlay());
+        this._uiOverlay.push(blocker);
+
+        const bg = this.add.rectangle(w / 2, h / 2, boxW, boxH, 0x0a0a1e, 0.96)
+            .setStrokeStyle(2, 0x00d4ff).setScrollFactor(0).setDepth(3000);
+        this._uiOverlay.push(bg);
+
+        const title = this.add.text(w / 2, h / 2 - boxH / 2 + 20, '系 統 選 單', {
             fontSize: `${Math.max(18, 22 * s)}px`, fontFamily: 'monospace', color: '#00d4ff'
-        }).setOrigin(0.5));
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(3001);
+        this._uiOverlay.push(title);
 
         const menuItems = [
-            { label: '背包', act: () => this.scene.start('Menu', { tab: 'inventory', city: this.cityKey }) },
-            { label: '狀態', act: () => this.scene.start('Menu', { tab: 'status', city: this.cityKey }) },
-            { label: '裝備', act: () => this.scene.start('Menu', { tab: 'equipment', city: this.cityKey }) },
-            { label: '技能', act: () => this.scene.start('Menu', { tab: 'skills', city: this.cityKey }) },
-            { label: '任務', act: () => this.scene.start('Menu', { tab: 'quest', city: this.cityKey }) },
-            { label: '移動 (高鐵)', act: () => { this.travelContainer.destroy(); this.travelContainer = null; this._showCityTravel(); } },
-            { label: '存檔', act: () => { this._quickSave(); this.travelContainer.destroy(); this.travelContainer = null; } },
+            { label: '📦  背包', act: () => this.scene.start('Menu', { tab: 'inventory', city: this.cityKey }) },
+            { label: '📊  狀態', act: () => this.scene.start('Menu', { tab: 'status', city: this.cityKey }) },
+            { label: '🛡️  裝備', act: () => this.scene.start('Menu', { tab: 'equipment', city: this.cityKey }) },
+            { label: '⚡  技能', act: () => this.scene.start('Menu', { tab: 'skills', city: this.cityKey }) },
+            { label: '📜  任務', act: () => this.scene.start('Menu', { tab: 'quest', city: this.cityKey }) },
+            { label: '🚄  高鐵移動', act: () => { this._clearOverlay(); this._showCityTravel(); } },
+            { label: '💾  存檔', act: () => { this._quickSave(); this._clearOverlay(); } },
         ];
 
+        const btnW = boxW - 40;
+        const btnH = Math.max(36, 40 * s);
         menuItems.forEach((item, i) => {
-            const y = h / 2 - boxH / 2 + 50 + i * 38 * s;
+            const y = h / 2 - boxH / 2 + 58 + i * (btnH + 6);
+            const btnBg = this.add.rectangle(w / 2, y, btnW, btnH, 0x1a1a3e, 0.9)
+                .setStrokeStyle(1, 0x334455)
+                .setScrollFactor(0).setDepth(3001)
+                .setInteractive({ useHandCursor: true });
             const txt = this.add.text(w / 2, y, item.label, {
-                fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#fff'
-            }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-            txt.on('pointerover', () => txt.setColor('#00d4ff'));
-            txt.on('pointerout', () => txt.setColor('#fff'));
-            txt.on('pointerdown', () => { this.audio.playSFX('click'); item.act(); });
-            this.travelContainer.add(txt);
+                fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#ddd'
+            }).setOrigin(0.5).setScrollFactor(0).setDepth(3002);
+            btnBg.on('pointerover', () => { btnBg.setFillStyle(0x2a2a4e); txt.setColor('#00d4ff'); });
+            btnBg.on('pointerout', () => { btnBg.setFillStyle(0x1a1a3e); txt.setColor('#ddd'); });
+            btnBg.on('pointerdown', () => { this.audio.playSFX('click'); item.act(); });
+            this._uiOverlay.push(btnBg, txt);
         });
 
-        const closeBtn = this.add.text(w / 2, h / 2 + boxH / 2 - 22, '關閉', {
+        const closeY = h / 2 + boxH / 2 - 26;
+        const closeBg = this.add.rectangle(w / 2, closeY, btnW, btnH, 0x3e1a1a, 0.9)
+            .setStrokeStyle(1, 0x553333)
+            .setScrollFactor(0).setDepth(3001)
+            .setInteractive({ useHandCursor: true });
+        const closeTxt = this.add.text(w / 2, closeY, '✕  關閉', {
             fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#e74c3c'
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-        closeBtn.on('pointerdown', () => { this.travelContainer.destroy(); this.travelContainer = null; });
-        this.travelContainer.add(closeBtn);
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(3002);
+        closeBg.on('pointerover', () => closeTxt.setColor('#ff6b6b'));
+        closeBg.on('pointerout', () => closeTxt.setColor('#e74c3c'));
+        closeBg.on('pointerdown', () => this._clearOverlay());
+        this._uiOverlay.push(closeBg, closeTxt);
     }
 
-    // --- CITY TRAVEL ---
+    _clearOverlay() {
+        this._uiOverlay.forEach(obj => obj.destroy());
+        this._uiOverlay = [];
+    }
+
+    // --- CITY TRAVEL (fixed: no container, individual scrollFactor(0) objects) ---
     _showCityTravel() {
-        if (this.travelContainer) { this.travelContainer.destroy(); this.travelContainer = null; return; }
+        if (this._uiOverlay.length > 0) { this._clearOverlay(); return; }
         const w = this.cameras.main.width, h = this.cameras.main.height;
         const s = Math.min(w / 800, h / 600);
 
-        this.travelContainer = this.add.container(0, 0).setScrollFactor(0).setDepth(3000);
         const boxW = Math.min(420, w * 0.85);
-        const boxH = Math.min(320, h * 0.55);
-        this.travelContainer.add(this.add.rectangle(w / 2, h / 2, boxW, boxH, 0x0a0a1e, 0.96).setStrokeStyle(2, 0x00d4ff));
-        this.travelContainer.add(this.add.text(w / 2, h / 2 - boxH / 2 + 16, '高鐵傳送', {
+        const boxH = Math.min(380, h * 0.65);
+
+        // Fullscreen blocker
+        const blocker = this.add.rectangle(w / 2, h / 2, w, h, 0x000000, 0.4)
+            .setScrollFactor(0).setDepth(2999).setInteractive();
+        blocker.on('pointerdown', () => this._clearOverlay());
+        this._uiOverlay.push(blocker);
+
+        const bg = this.add.rectangle(w / 2, h / 2, boxW, boxH, 0x0a0a1e, 0.96)
+            .setStrokeStyle(2, 0x00d4ff).setScrollFactor(0).setDepth(3000);
+        this._uiOverlay.push(bg);
+
+        const title = this.add.text(w / 2, h / 2 - boxH / 2 + 20, '🚄 高鐵移動', {
             fontSize: `${Math.max(18, 22 * s)}px`, fontFamily: 'monospace', color: '#00d4ff'
-        }).setOrigin(0.5));
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(3001);
+        this._uiOverlay.push(title);
+
+        const btnW = boxW - 40;
+        const btnH = Math.max(36, 40 * s);
 
         CITY_ORDER.forEach((ck, i) => {
             const city = CITIES[ck];
             const unlocked = this.player.citiesUnlocked.includes(ck);
             const isCurrent = ck === this.cityKey;
-            const y = h / 2 - boxH / 2 + 50 + i * 36 * s;
-            const color = isCurrent ? '#7f8c8d' : unlocked ? city.color : '#444';
-            const label = `${city.name} (LV.${city.levelRange[0]}-${city.levelRange[1]})${isCurrent ? ' ← 目前' : ''}${!unlocked ? ' 🔒' : ''}`;
-            const txt = this.add.text(w / 2, y, label, {
-                fontSize: `${Math.max(15, 18 * s)}px`, fontFamily: 'monospace', color
-            }).setOrigin(0.5);
+            const y = h / 2 - boxH / 2 + 58 + i * (btnH + 6);
+            const labelText = `${city.name} (LV.${city.levelRange[0]}-${city.levelRange[1]})${isCurrent ? '  ← 目前所在' : ''}${!unlocked ? '  🔒' : ''}`;
+            const bgColor = isCurrent ? 0x1a2a1a : unlocked ? 0x1a1a3e : 0x1a1a1a;
+            const borderColor = isCurrent ? 0x2ecc71 : unlocked ? 0x334455 : 0x222222;
+            const textColor = isCurrent ? '#2ecc71' : unlocked ? city.color : '#444';
+
+            const rowBg = this.add.rectangle(w / 2, y, btnW, btnH, bgColor, 0.9)
+                .setStrokeStyle(1, borderColor)
+                .setScrollFactor(0).setDepth(3001);
+            const txt = this.add.text(w / 2, y, labelText, {
+                fontSize: `${Math.max(15, 17 * s)}px`, fontFamily: 'monospace', color: textColor
+            }).setOrigin(0.5).setScrollFactor(0).setDepth(3002);
+
             if (unlocked && !isCurrent) {
-                txt.setInteractive({ useHandCursor: true });
-                txt.on('pointerdown', () => { this.travelContainer.destroy(); this.travelContainer = null; this.scene.start('City', { city: ck }); });
+                rowBg.setInteractive({ useHandCursor: true });
+                rowBg.on('pointerover', () => { rowBg.setFillStyle(0x2a2a4e); txt.setColor('#fff'); });
+                rowBg.on('pointerout', () => { rowBg.setFillStyle(bgColor); txt.setColor(textColor); });
+                rowBg.on('pointerdown', () => {
+                    this.audio.playSFX('click');
+                    this._clearOverlay();
+                    this.scene.start('City', { city: ck });
+                });
             }
-            this.travelContainer.add(txt);
+            this._uiOverlay.push(rowBg, txt);
         });
 
-        const closeBtn = this.add.text(w / 2, h / 2 + boxH / 2 - 20, '取消', {
+        const closeY = h / 2 + boxH / 2 - 26;
+        const closeBg = this.add.rectangle(w / 2, closeY, btnW, btnH, 0x3e1a1a, 0.9)
+            .setStrokeStyle(1, 0x553333)
+            .setScrollFactor(0).setDepth(3001)
+            .setInteractive({ useHandCursor: true });
+        const closeTxt = this.add.text(w / 2, closeY, '✕  取消', {
             fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#e74c3c'
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-        closeBtn.on('pointerdown', () => { this.travelContainer.destroy(); this.travelContainer = null; });
-        this.travelContainer.add(closeBtn);
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(3002);
+        closeBg.on('pointerover', () => closeTxt.setColor('#ff6b6b'));
+        closeBg.on('pointerout', () => closeTxt.setColor('#e74c3c'));
+        closeBg.on('pointerdown', () => this._clearOverlay());
+        this._uiOverlay.push(closeBg, closeTxt);
     }
 
     // --- SAVE ---

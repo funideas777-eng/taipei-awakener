@@ -585,6 +585,7 @@ export class SpriteGenerator {
             { key: 'building-inn', color: '#d35400', icon: 'R', label: '酒館' },
             { key: 'building-guild', color: '#f1c40f', icon: 'G', label: '公會' },
             { key: 'building-diamond', color: '#00bcd4', icon: 'D', label: '鑽石商城' },
+            { key: 'building-hsr', color: '#ff6600', icon: 'T', label: '高鐵站' },
         ];
 
         buildings.forEach(b => {

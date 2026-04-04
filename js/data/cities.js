@@ -15,6 +15,7 @@ export const CITIES = {
             { type: 'magic', x: 7, y: 30, w: 3, h: 3, name: '魔咒學院' },
             { type: 'inn', x: 18, y: 30, w: 3, h: 3, name: '酒館' },
             { type: 'diamond', x: 29, y: 30, w: 3, h: 3, name: '鑽石商城' },
+            { type: 'hsr', x: 40, y: 30, w: 3, h: 3, name: '🚄 高鐵站' },
         ],
         portalZones: [
             { x: 42, y: 18, rank: 'E', minLevel: 1 },
@@ -36,6 +37,7 @@ export const CITIES = {
             { type: 'magic', x: 7, y: 30, w: 3, h: 3, name: '魔咒學院' },
             { type: 'inn', x: 18, y: 30, w: 3, h: 3, name: '酒館' },
             { type: 'diamond', x: 29, y: 30, w: 3, h: 3, name: '鑽石商城' },
+            { type: 'hsr', x: 40, y: 30, w: 3, h: 3, name: '🚄 高鐵站' },
         ],
         portalZones: [
             { x: 42, y: 18, rank: 'D', minLevel: 8 },
@@ -57,6 +59,7 @@ export const CITIES = {
             { type: 'magic', x: 7, y: 30, w: 3, h: 3, name: '魔咒學院' },
             { type: 'inn', x: 18, y: 30, w: 3, h: 3, name: '酒館' },
             { type: 'diamond', x: 29, y: 30, w: 3, h: 3, name: '鑽石商城' },
+            { type: 'hsr', x: 40, y: 30, w: 3, h: 3, name: '🚄 高鐵站' },
         ],
         portalZones: [
             { x: 42, y: 18, rank: 'C', minLevel: 15 },
@@ -78,6 +81,7 @@ export const CITIES = {
             { type: 'magic', x: 7, y: 30, w: 3, h: 3, name: '魔咒學院' },
             { type: 'inn', x: 18, y: 30, w: 3, h: 3, name: '酒館' },
             { type: 'diamond', x: 29, y: 30, w: 3, h: 3, name: '鑽石商城' },
+            { type: 'hsr', x: 40, y: 30, w: 3, h: 3, name: '🚄 高鐵站' },
         ],
         portalZones: [
             { x: 42, y: 18, rank: 'B', minLevel: 22 },
@@ -99,6 +103,7 @@ export const CITIES = {
             { type: 'magic', x: 7, y: 30, w: 3, h: 3, name: '魔咒學院' },
             { type: 'inn', x: 18, y: 30, w: 3, h: 3, name: '酒館' },
             { type: 'diamond', x: 29, y: 30, w: 3, h: 3, name: '鑽石商城' },
+            { type: 'hsr', x: 40, y: 30, w: 3, h: 3, name: '🚄 高鐵站' },
         ],
         portalZones: [
             { x: 42, y: 18, rank: 'A', minLevel: 30 },
@@ -120,6 +125,7 @@ export const CITIES = {
             { type: 'magic', x: 7, y: 30, w: 3, h: 3, name: '魔咒學院' },
             { type: 'inn', x: 18, y: 30, w: 3, h: 3, name: '酒館' },
             { type: 'diamond', x: 29, y: 30, w: 3, h: 3, name: '鑽石商城' },
+            { type: 'hsr', x: 40, y: 30, w: 3, h: 3, name: '🚄 高鐵站' },
         ],
         portalZones: [
             { x: 42, y: 18, rank: 'S', minLevel: 38 },

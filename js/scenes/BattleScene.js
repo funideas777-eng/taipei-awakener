@@ -1,6 +1,7 @@
 // Turn-based battle scene — multi-monster support with scrollable skills
 import { BattleSystem } from '../systems/BattleSystem.js';
 import { QuestSystem } from '../systems/QuestSystem.js';
+import { SaveSystem } from '../systems/SaveSystem.js';
 import { SKILLS } from '../data/skills.js';
 import { ITEMS } from '../data/items.js';
 import { STORY } from '../data/story.js';
@@ -554,13 +555,13 @@ export class BattleScene extends Phaser.Scene {
                     }
 
                     if (this.isFinalBoss) {
-                        this._triggerFinalEnding();
+                        this._promptNameThenDo(() => this._triggerFinalEnding());
                         return;
                     }
 
                     // Show boss victory + citizen gratitude dialog
                     if (hasBoss) {
-                        this._showBossVictoryDialog();
+                        this._promptNameThenDo(() => this._showBossVictoryDialog());
                         return;
                     }
 
@@ -611,6 +612,61 @@ export class BattleScene extends Phaser.Scene {
                 }
             });
         }
+    }
+
+    _promptNameThenDo(callback) {
+        const modal = document.getElementById('name-modal');
+        const input = document.getElementById('player-name-input');
+        const submitBtn = document.getElementById('name-submit-btn');
+        const skipBtn = document.getElementById('name-skip-btn');
+
+        if (!modal || !input) {
+            // Fallback: if modal elements missing, just proceed
+            callback();
+            return;
+        }
+
+        // Pre-fill saved name
+        const savedName = SaveSystem.getSavedPlayerName();
+        input.value = savedName;
+        modal.style.display = 'flex';
+        input.focus();
+
+        const cleanup = () => {
+            modal.style.display = 'none';
+            submitBtn.removeEventListener('click', onSubmit);
+            skipBtn.removeEventListener('click', onSkip);
+            input.removeEventListener('keydown', onEnter);
+        };
+
+        const onSubmit = () => {
+            const name = (input.value || '').trim().substring(0, 12) || '匿名覺醒者';
+            SaveSystem.savePlayerName(name);
+            this.player.name = name;
+
+            const citiesCleared = (this.player.bossesDefeated || []).length;
+            SaveSystem.pushGlobal(name, this.player.level, citiesCleared);
+            SaveSystem.addLeaderboardEntry(this.player);
+
+            cleanup();
+            callback();
+        };
+
+        const onSkip = () => {
+            // Still submit with default name if available
+            const citiesCleared = (this.player.bossesDefeated || []).length;
+            SaveSystem.addLeaderboardEntry(this.player);
+            cleanup();
+            callback();
+        };
+
+        const onEnter = (e) => {
+            if (e.key === 'Enter') onSubmit();
+        };
+
+        submitBtn.addEventListener('click', onSubmit);
+        skipBtn.addEventListener('click', onSkip);
+        input.addEventListener('keydown', onEnter);
     }
 
     _showBossVictoryDialog() {

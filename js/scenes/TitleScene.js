@@ -159,31 +159,103 @@ export class TitleScene extends Phaser.Scene {
     _showLeaderboard() {
         if (this.leaderboardContainer) { this.leaderboardContainer.destroy(); this.leaderboardContainer = null; return; }
         if (this.saveContainer) { this.saveContainer.destroy(); this.saveContainer = null; }
+
+        this._lbTab = 'local';
+        this._buildLeaderboardUI();
+    }
+
+    _buildLeaderboardUI() {
+        if (this.leaderboardContainer) { this.leaderboardContainer.destroy(); this.leaderboardContainer = null; }
+
         const w = this.cameras.main.width;
         const h = this.cameras.main.height;
         const s = Math.min(w / 800, h / 600);
+        const boxW = Math.min(500, w * 0.85);
+        const boxH = Math.min(400, h * 0.68);
+        const fs = Math.max(14, 16 * s);
 
         this.leaderboardContainer = this.add.container(0, 0);
-        this.leaderboardContainer.add(this.add.rectangle(w / 2, h / 2, Math.min(500, w * 0.85), Math.min(350, h * 0.6), 0x0a0a1e, 0.96).setStrokeStyle(2, 0xf1c40f));
-        this.leaderboardContainer.add(this.add.text(w / 2, h / 2 - 130 * s, '排 行 榜', {
+        this.leaderboardContainer.add(this.add.rectangle(w / 2, h / 2, boxW, boxH, 0x0a0a1e, 0.96).setStrokeStyle(2, 0xf1c40f));
+        this.leaderboardContainer.add(this.add.text(w / 2, h / 2 - boxH / 2 + 20 * s, '排 行 榜', {
             fontSize: `${Math.max(20, 24 * s)}px`, fontFamily: 'monospace', color: '#f1c40f'
         }).setOrigin(0.5));
 
-        const board = SaveSystem.getLeaderboard();
-        board.slice(0, 8).forEach((entry, i) => {
-            const y = h / 2 - 80 * s + i * 28 * s;
-            const rankColor = i === 0 ? '#f1c40f' : i === 1 ? '#bdc3c7' : i === 2 ? '#cd7f32' : '#fff';
-            this.leaderboardContainer.add(this.add.text(w / 2 - 160 * s, y,
-                `#${i + 1}  ${entry.name.padEnd(10)} LV.${String(entry.level).padStart(2)}  ${entry.citiesCleared}/6`,
-                { fontSize: `${Math.max(14, 16 * s)}px`, fontFamily: 'monospace', color: rankColor }
-            ));
-        });
-        if (board.length === 0) {
-            this.leaderboardContainer.add(this.add.text(w / 2, h / 2, '暫無記錄', {
-                fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#666'
-            }).setOrigin(0.5));
+        // Tab buttons
+        const tabY = h / 2 - boxH / 2 + 55 * s;
+        const tabW = 90 * s;
+        const tabH = 28 * s;
+        const localColor = this._lbTab === 'local' ? 0x3498db : 0x2c3e50;
+        const globalColor = this._lbTab === 'global' ? 0x3498db : 0x2c3e50;
+        const localTextColor = this._lbTab === 'local' ? '#fff' : '#888';
+        const globalTextColor = this._lbTab === 'global' ? '#fff' : '#888';
+
+        const localTab = this.add.rectangle(w / 2 - 55 * s, tabY, tabW, tabH, localColor)
+            .setStrokeStyle(1, 0x3498db).setInteractive({ useHandCursor: true });
+        this.leaderboardContainer.add(localTab);
+        this.leaderboardContainer.add(this.add.text(w / 2 - 55 * s, tabY, '本機', {
+            fontSize: `${Math.max(13, 15 * s)}px`, fontFamily: 'monospace', color: localTextColor
+        }).setOrigin(0.5));
+        localTab.on('pointerdown', () => { this._lbTab = 'local'; this._buildLeaderboardUI(); });
+
+        const globalTab = this.add.rectangle(w / 2 + 55 * s, tabY, tabW, tabH, globalColor)
+            .setStrokeStyle(1, 0x3498db).setInteractive({ useHandCursor: true });
+        this.leaderboardContainer.add(globalTab);
+        this.leaderboardContainer.add(this.add.text(w / 2 + 55 * s, tabY, '全球', {
+            fontSize: `${Math.max(13, 15 * s)}px`, fontFamily: 'monospace', color: globalTextColor
+        }).setOrigin(0.5));
+        globalTab.on('pointerdown', () => { this._lbTab = 'global'; this._buildLeaderboardUI(); });
+
+        const listStartY = h / 2 - boxH / 2 + 85 * s;
+
+        if (this._lbTab === 'local') {
+            const board = SaveSystem.getLeaderboard();
+            board.slice(0, 8).forEach((entry, i) => {
+                const y = listStartY + i * 28 * s;
+                const rankColor = i === 0 ? '#f1c40f' : i === 1 ? '#bdc3c7' : i === 2 ? '#cd7f32' : '#fff';
+                this.leaderboardContainer.add(this.add.text(w / 2 - 160 * s, y,
+                    `#${i + 1}  ${entry.name.padEnd(10)} LV.${String(entry.level).padStart(2)}  ${entry.citiesCleared}/6`,
+                    { fontSize: `${fs}px`, fontFamily: 'monospace', color: rankColor }
+                ));
+            });
+            if (board.length === 0) {
+                this.leaderboardContainer.add(this.add.text(w / 2, listStartY + 60 * s, '暫無記錄', {
+                    fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#666'
+                }).setOrigin(0.5));
+            }
+        } else {
+            // Global tab — show loading then fetch
+            const loadingText = this.add.text(w / 2, listStartY + 60 * s, '載入中...', {
+                fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#888'
+            }).setOrigin(0.5);
+            this.leaderboardContainer.add(loadingText);
+
+            SaveSystem.fetchGlobal().then(data => {
+                if (!this.leaderboardContainer || this._lbTab !== 'global') return;
+                loadingText.destroy();
+
+                if (data && data.length > 0) {
+                    data.slice(0, 10).forEach((entry, i) => {
+                        const y = listStartY + i * 28 * s;
+                        const rankColor = i === 0 ? '#f1c40f' : i === 1 ? '#bdc3c7' : i === 2 ? '#cd7f32' : '#fff';
+                        const lvl = entry.level || Math.floor((entry.score || 0) / 100);
+                        const cities = entry.citiesCleared || Math.floor(((entry.score || 0) % 100) / 10);
+                        const txt = this.add.text(w / 2 - 160 * s, y,
+                            `#${i + 1}  ${String(entry.name).padEnd(10)} LV.${String(lvl).padStart(2)}  ${cities}/6`,
+                            { fontSize: `${fs}px`, fontFamily: 'monospace', color: rankColor }
+                        );
+                        if (this.leaderboardContainer) this.leaderboardContainer.add(txt);
+                    });
+                } else {
+                    const noData = this.add.text(w / 2, listStartY + 60 * s, '暫無全球記錄', {
+                        fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#666'
+                    }).setOrigin(0.5);
+                    if (this.leaderboardContainer) this.leaderboardContainer.add(noData);
+                }
+            });
         }
-        const closeBtn2 = this.add.text(w / 2, h / 2 + 140 * s, '返回', {
+
+        // Close button
+        const closeBtn2 = this.add.text(w / 2, h / 2 + boxH / 2 - 25 * s, '返回', {
             fontSize: `${Math.max(16, 18 * s)}px`, fontFamily: 'monospace', color: '#e74c3c'
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
         closeBtn2.on('pointerdown', () => { this.leaderboardContainer.destroy(); this.leaderboardContainer = null; });

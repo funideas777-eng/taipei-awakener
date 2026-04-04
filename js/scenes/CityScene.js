@@ -2,6 +2,7 @@
 import { CITIES, CITY_ORDER } from '../data/cities.js';
 import { CITY_MONSTERS, CITY_BOSSES, MONSTERS } from '../data/monsters.js';
 import { PORTAL_RANKS } from '../data/dungeons.js';
+import { STORY } from '../data/story.js';
 import { SaveSystem } from '../systems/SaveSystem.js';
 import { MapGenerator } from '../utils/MapGenerator.js';
 import { VirtualJoystick } from '../utils/VirtualJoystick.js';
@@ -92,6 +93,55 @@ export class CityScene extends Phaser.Scene {
         }).setOrigin(0.5).setScrollFactor(0).setDepth(999).setVisible(false);
 
         this.currentInteractable = null;
+
+        // City intro dialog on first visit
+        this._checkCityIntro();
+
+        // Check if all 6 bosses defeated → trigger final boss
+        this._checkFinalBossTrigger();
+    }
+
+    _checkCityIntro() {
+        const introKey = `cityIntro_${this.cityKey}`;
+        const visitedKey = `visited_${this.cityKey}`;
+        if (!this.registry.get(visitedKey) && STORY[introKey]) {
+            this.registry.set(visitedKey, true);
+            this.scene.launch('Dialog', {
+                dialogs: STORY[introKey],
+                onComplete: () => {}
+            });
+        }
+    }
+
+    _checkFinalBossTrigger() {
+        const allBosses = ['boss_data_devourer', 'boss_chaos', 'boss_mech_overlord', 'boss_smog_giant', 'boss_time_corruptor', 'boss_abyss_lord'];
+        const allDefeated = allBosses.every(b => this.player.bossesDefeated.includes(b));
+        const finalBossDefeated = this.player.bossesDefeated.includes('boss_trump');
+        if (allDefeated && !finalBossDefeated && this.cityKey === 'taipei' && !this.registry.get('finalBossTriggered')) {
+            this.registry.set('finalBossTriggered', true);
+            // Show final boss prelude → battle → boss story → ending
+            this.time.delayedCall(1500, () => {
+                const prelude = STORY.finalBossPrelude || [];
+                const battleIntro = STORY.finalBossBattle || [];
+                const allDialogs = [...prelude, ...battleIntro];
+                this.scene.launch('Dialog', {
+                    dialogs: allDialogs,
+                    onComplete: () => {
+                        // Start final boss battle
+                        const trump = MONSTERS['boss_trump'];
+                        if (trump) {
+                            this.scene.start('Battle', {
+                                monsters: [{ ...trump }],
+                                returnScene: 'City',
+                                returnData: { city: 'taipei' },
+                                rankMultiplier: 2,
+                                isFinalBoss: true,
+                            });
+                        }
+                    }
+                });
+            });
+        }
     }
 
     update() {

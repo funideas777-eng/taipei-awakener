@@ -180,6 +180,17 @@ export const MONSTERS = {
         weakness: '光屬性',
         storyKey: 'bossKaohsiung',
     },
+    boss_trump: {
+        id: 'boss_trump', name: '異界霸主・川普', sprite: 'boss-trump',
+        level: 60, hp: 8000, mp: 500, atk: 80, def: 55, spd: 30,
+        exp: 15000, gold: 10000, isBoss: true, isFinalBoss: true,
+        drops: [
+            { itemId: 'diamond', chance: 1.0, amount: 100 },
+        ],
+        skills: ['tariff-attack', 'you-are-fired', 'trade-war', 'fake-news', 'executive-order'],
+        weakness: '團結之力',
+        storyKey: 'bossFinal',
+    },
 };
 
 // Monsters by city/region

@@ -1,4 +1,4 @@
-// Dungeon scene - free movement with monster patrol AI
+// Dungeon scene - free movement with monster patrol AI, persistent map across battles
 import { MapGenerator } from '../utils/MapGenerator.js';
 import { CITY_MONSTERS, CITY_BOSSES, MONSTERS } from '../data/monsters.js';
 import { PORTAL_RANKS, DUNGEON_THEMES, RANK_REWARDS } from '../data/dungeons.js';
@@ -93,6 +93,17 @@ export class DungeonScene extends Phaser.Scene {
         this._updateStatus();
 
         this._inBattle = false;
+
+        // Wake handler: when returning from battle, resume dungeon
+        this.events.on('wake', () => {
+            this._inBattle = false;
+            this.audio.playBGM('dungeon');
+            this._updateStatus();
+            // Re-enable physics for player
+            if (this.playerSprite && this.playerSprite.body) {
+                this.playerSprite.body.enable = true;
+            }
+        });
     }
 
     update() {
@@ -206,7 +217,7 @@ export class DungeonScene extends Phaser.Scene {
                 ms.alive = false;
                 sprite.setVisible(false);
                 sprite.body.enable = false;
-                this._startBattle(monsterData);
+                this._startBattle(monsterData, m.room);
             });
 
             // Bounce tween
@@ -300,24 +311,41 @@ export class DungeonScene extends Phaser.Scene {
         }
     }
 
-    _startBattle(monsterData) {
+    _startBattle(monsterData, room) {
         this._inBattle = true;
         this.playerSprite.setVelocity(0, 0);
 
         const rankData = PORTAL_RANKS[this.rank];
         const lvRange = rankData.monsterLevelRange;
-        const scaledLevel = lvRange[0] + Math.floor(Math.random() * (lvRange[1] - lvRange[0]));
-        const sf = scaledLevel / Math.max(1, monsterData.level);
 
-        this.scene.start('Battle', {
-            monster: {
-                ...monsterData, level: scaledLevel,
-                hp: Math.floor(monsterData.hp * sf),
-                atk: Math.floor(monsterData.atk * sf),
-                def: Math.floor(monsterData.def * sf),
-                exp: Math.floor(monsterData.exp * sf),
-                gold: Math.floor(monsterData.gold * sf),
-            },
+        // Determine encounter size: 1-5 monsters based on rank
+        const rankTiers = { E: 1, D: 2, C: 3, B: 3, A: 4, S: 5 };
+        const maxMonsters = rankTiers[this.rank] || 2;
+        const monsterCount = 1 + Math.floor(Math.random() * maxMonsters);
+        const monsterPool = CITY_MONSTERS[this.cityKey] || ['slime'];
+
+        const monsters = [];
+        for (let i = 0; i < monsterCount; i++) {
+            // First monster is always the one that was touched
+            const mData = i === 0 ? monsterData : MONSTERS[monsterPool[Math.floor(Math.random() * monsterPool.length)]];
+            if (!mData) continue;
+
+            const scaledLevel = lvRange[0] + Math.floor(Math.random() * (lvRange[1] - lvRange[0]));
+            const sf = scaledLevel / Math.max(1, mData.level);
+            monsters.push({
+                ...mData, level: scaledLevel,
+                hp: Math.floor(mData.hp * sf),
+                atk: Math.floor(mData.atk * sf),
+                def: Math.floor(mData.def * sf),
+                exp: Math.floor(mData.exp * sf),
+                gold: Math.floor(mData.gold * sf),
+            });
+        }
+
+        // Sleep dungeon (preserves state) then launch battle
+        this.scene.sleep();
+        this.scene.launch('Battle', {
+            monsters: monsters,
             returnScene: 'Dungeon',
             returnData: { city: this.cityKey, rank: this.rank, hasBoss: this.hasBoss },
             rankMultiplier: RANK_REWARDS[this.rank].expMul,
@@ -331,8 +359,9 @@ export class DungeonScene extends Phaser.Scene {
         const bossStory = STORY[bossData.storyKey];
 
         const go = () => {
+            // Boss fights are single monster, use scene.start (no need to preserve dungeon)
             this.scene.start('Battle', {
-                monster: { ...bossData },
+                monsters: [{ ...bossData }],
                 returnScene: 'City',
                 returnData: { city: this.cityKey },
                 rankMultiplier: RANK_REWARDS[this.rank].expMul,

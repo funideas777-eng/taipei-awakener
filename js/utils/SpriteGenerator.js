@@ -106,6 +106,7 @@ export class SpriteGenerator {
         this._genBossSmogGiant(scene);
         this._genBossTimeCorruptor(scene);
         this._genBossAbyssLord(scene);
+        this._genBossTrump(scene);
     }
 
     static _genSlime(scene) {
@@ -385,6 +386,58 @@ export class SpriteGenerator {
             ctx.fillRect(8 + i * 6, 44, 3, 4);
         }
         scene.textures.addCanvas('boss-abyss-lord', c);
+    }
+
+    static _genBossTrump(scene) {
+        const c = document.createElement('canvas');
+        c.width = 48; c.height = 56;
+        const ctx = c.getContext('2d');
+        // Hair (golden)
+        ctx.fillStyle = '#FFD700';
+        ctx.fillRect(10, 2, 28, 10);
+        ctx.fillRect(8, 6, 4, 8);
+        ctx.fillRect(36, 6, 4, 8);
+        // Head (orange skin)
+        ctx.fillStyle = '#FF8C00';
+        ctx.fillRect(12, 8, 24, 16);
+        // Eyes
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(16, 14, 5, 4);
+        ctx.fillRect(27, 14, 5, 4);
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(18, 15, 2, 2);
+        ctx.fillRect(29, 15, 2, 2);
+        // Mouth (big grin)
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(18, 20, 12, 3);
+        // Suit (dark blue)
+        ctx.fillStyle = '#0d1b40';
+        ctx.fillRect(8, 24, 32, 24);
+        // Red tie
+        ctx.fillStyle = '#e74c3c';
+        ctx.fillRect(22, 24, 4, 18);
+        ctx.fillRect(20, 42, 8, 3);
+        // Shirt collar
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(18, 24, 4, 4);
+        ctx.fillRect(26, 24, 4, 4);
+        // Arms
+        ctx.fillStyle = '#0d1b40';
+        ctx.fillRect(4, 26, 4, 16);
+        ctx.fillRect(40, 26, 4, 16);
+        // Hands (orange)
+        ctx.fillStyle = '#FF8C00';
+        ctx.fillRect(4, 42, 4, 4);
+        ctx.fillRect(40, 42, 4, 4);
+        // Evil aura
+        ctx.fillStyle = 'rgba(255, 0, 0, 0.15)';
+        ctx.fillRect(0, 0, 48, 56);
+        // Golden crown
+        ctx.fillStyle = '#FFD700';
+        ctx.fillRect(14, 0, 4, 4);
+        ctx.fillRect(22, 0, 4, 3);
+        ctx.fillRect(30, 0, 4, 4);
+        scene.textures.addCanvas('boss-trump', c);
     }
 
     // --- TILES ---
